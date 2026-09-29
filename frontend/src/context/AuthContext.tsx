@@ -76,6 +76,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ignore
     } finally {
       removeAuthToken();
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('live_tab_student');
+        localStorage.removeItem('live_tab_admin');
+        window.location.href = '/';
+      }
       setUser(null);
       setLoading(false);
     }

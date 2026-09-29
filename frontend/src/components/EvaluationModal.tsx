@@ -90,7 +90,7 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">
-              Roll No: <span className="text-slate-900 font-semibold">{submission.student?.studentId}</span> • Question:{' '}
+              <span className="text-slate-900 font-semibold">{submission.student?.email}</span> • Question:{' '}
               <span className="text-violet-700 font-semibold">{submission.question?.title}</span> (Max: {maxMarks} marks)
             </p>
           </div>

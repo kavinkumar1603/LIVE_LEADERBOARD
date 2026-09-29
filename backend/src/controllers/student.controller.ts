@@ -40,28 +40,32 @@ export class StudentController {
       throw new Error('No active questions found in pool');
     }
 
-    // Randomize selection balanced by difficulty if possible
-    const easy = pool.filter((q) => q.difficulty === 'easy');
-    const medium = pool.filter((q) => q.difficulty === 'medium');
-    const hard = pool.filter((q) => q.difficulty === 'hard');
-
-    const shuffle = (array: any[]) => [...array].sort(() => 0.5 - Math.random());
+    const numNeeded = assessment.totalQuestions || 6;
     const selectedQuestions: any[] = [];
 
-    const numNeeded = assessment.totalQuestions || 5;
+    if (pool.length <= numNeeded) {
+      // Assign all questions in the pool in natural order (Q1, Q2, ...)
+      const sortedPool = [...pool].sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+      selectedQuestions.push(...sortedPool);
+    } else {
+      // Randomize selection balanced by difficulty
+      const easy = pool.filter((q) => q.difficulty === 'easy');
+      const medium = pool.filter((q) => q.difficulty === 'medium');
+      const hard = pool.filter((q) => q.difficulty === 'hard');
 
-    // Pick 2 easy, 2 medium, 1 hard if available
-    const pickedEasy = shuffle(easy).slice(0, 2);
-    const pickedMed = shuffle(medium).slice(0, 2);
-    const pickedHard = shuffle(hard).slice(0, 1);
+      const shuffle = (array: any[]) => [...array].sort(() => 0.5 - Math.random());
 
-    selectedQuestions.push(...pickedEasy, ...pickedMed, ...pickedHard);
+      const pickedEasy = shuffle(easy).slice(0, 2);
+      const pickedMed = shuffle(medium).slice(0, 3);
+      const pickedHard = shuffle(hard).slice(0, 1);
 
-    // If still less than needed, fill from remaining pool
-    if (selectedQuestions.length < numNeeded) {
-      const selectedIds = new Set(selectedQuestions.map((q) => q._id.toString()));
-      const remaining = pool.filter((q) => !selectedIds.has(q._id.toString()));
-      selectedQuestions.push(...shuffle(remaining).slice(0, numNeeded - selectedQuestions.length));
+      selectedQuestions.push(...pickedEasy, ...pickedMed, ...pickedHard);
+
+      if (selectedQuestions.length < numNeeded) {
+        const selectedIds = new Set(selectedQuestions.map((q) => q._id.toString()));
+        const remaining = pool.filter((q) => !selectedIds.has(q._id.toString()));
+        selectedQuestions.push(...shuffle(remaining).slice(0, numNeeded - selectedQuestions.length));
+      }
     }
 
     // Map to assignment schema

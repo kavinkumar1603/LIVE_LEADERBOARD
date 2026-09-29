@@ -90,7 +90,7 @@ export class ScoreService {
         rollNumber: student.studentId || 'N/A',
         name: student.name,
         department: student.department || 'CSE',
-        section: student.section || 'A',
+        section: student.section || 'C',
         totalMarks: scoreData.totalMarks,
         maxPossibleMarks: scoreData.maxPossibleMarks,
         percentage: scoreData.percentage,
@@ -117,13 +117,17 @@ export class ScoreService {
       return 0;
     });
 
-    // Assign rank with standard competition ranking
-    let currentRank = 1;
+    // Assign rank with standard competition ranking (only students with marks > 0 are ranked)
     for (let i = 0; i < leaderboardList.length; i++) {
+      const curr = leaderboardList[i];
+      if (curr.totalMarks <= 0) {
+        curr.rank = 0;
+        continue;
+      }
       if (i > 0) {
         const prev = leaderboardList[i - 1];
-        const curr = leaderboardList[i];
         if (
+          prev.totalMarks > 0 &&
           curr.totalMarks === prev.totalMarks &&
           curr.completedQuestions === prev.completedQuestions
         ) {
@@ -132,7 +136,7 @@ export class ScoreService {
           curr.rank = i + 1;
         }
       } else {
-        leaderboardList[0].rank = 1;
+        curr.rank = 1;
       }
     }
 

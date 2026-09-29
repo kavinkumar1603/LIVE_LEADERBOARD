@@ -31,150 +31,326 @@ export const seedDatabase = async () => {
     await Evaluation.deleteMany({});
     await AuditLog.deleteMany({});
 
-    // 1. Create Sample Users
-    const adminPasswordHash = await bcrypt.hash('AdminPassword123!', 10);
-    const studentPasswordHash = await bcrypt.hash('StudentPass123!', 10);
+    // 1. Create Admin & SECE Student Accounts
+    // Admin: anandaraj.a@sece.ac.in (Password: anandaraj.a@sece.ac.in)
+    const adminEmail = 'anandaraj.a@sece.ac.in';
+    const adminPasswordHash = await bcrypt.hash(adminEmail, 10);
 
     const admin = await User.create({
-      name: 'Prof. Vikram Sharma',
-      email: 'admin@livecode.edu',
+      name: 'Prof. Anandaraj A',
+      email: adminEmail,
       passwordHash: adminPasswordHash,
       role: 'admin',
-      department: 'Department of Computer Science',
-      section: 'Staff',
+      department: 'Department of Computer and Communication Engineering',
+      section: 'Faculty',
       year: 0
     });
 
-    const student1 = await User.create({
-      name: 'Arun Kumar',
-      email: 'arun@livecode.edu',
-      passwordHash: studentPasswordHash,
-      role: 'student',
-      studentId: '24CSE001',
-      department: 'Computer Science & Engineering',
-      section: 'A',
-      year: 1
-    });
+    // Cleaned student emails from contest list
+    const rawStudentEmails = [
+      'naveen.m2026cse@sece.ac.in',
+      'naveenkumar.s2026cse@sece.ac.in',
+      'navin.m2026cse@sece.ac.in',
+      'nesanth.k2026cse@sece.ac.in',
+      'neya.2026cse@sece.ac.in',
+      'nigalya.s2026cse@sece.ac.in',
+      'nikisha.s2026cse@sece.ac.in',
+      'nishant.jc2026cse@sece.ac.in',
+      'nithishkumar.m2026cse@sece.ac.in',
+      'nithishpranav.m2026cse@sece.ac.in',
+      'nitiksha.sg2026cse@sece.ac.in',
+      'nivetha.s2026cse@sece.ac.in',
+      'nivetha.v2026cse@sece.ac.in',
+      'omkarthakur.2026cse@sece.ac.in',
+      'oviya.ks2026cse@sece.ac.in',
+      'pavithra.i2026cse@sece.ac.in',
+      'ponmathilakshmi.2026cse@sece.ac.in',
+      'poojasri.ms2026cse@sece.ac.in',
+      'poovika.b2026cse@sece.ac.in',
+      'prabhakaran.m2026cse@sece.ac.in',
+      'pradeesh.s2026cse@sece.ac.in',
+      'pragatheesh.s2026cse@sece.ac.in',
+      'pragathimuralirasa.2026cse@sece.ac.in',
+      'prakash.b2026cse@sece.ac.in',
+      'pranav.kk2026cse@sece.ac.in',
+      'pranavkumar.s2026cse@sece.ac.in',
+      'pranayaaramasubramanian.2026cse@sece.ac.in',
+      'praniha.j2026cse@sece.ac.in',
+      'prashunkumarojha.2026cse@sece.ac.in',
+      'praveena.m2026cse@sece.ac.in',
+      'pravin.ts2026cse@sece.ac.in',
+      'preethi.amv2026cse@sece.ac.in',
+      'preethika.2026cse@sece.ac.in',
+      'primolchristy.m2026cse@sece.ac.in',
+      'prithikaa.s2026cse@sece.ac.in',
+      'prithivraj.a2026cse@sece.ac.in',
+      'priyadharshini.r2026cse@sece.ac.in',
+      'priyankakumarishah.2026@sece.ac.in',
+      'ragashree.a2026cse@sece.ac.in',
+      'rajkrishnasah.2026cse@sece.ac.in',
+      'rajuvanthi.r2026cse@sece.ac.in',
+      'rakashana.r2026cse@sece.ac.in',
+      'rakesh.m2026cse@sece.ac.in',
+      'rakshit.vs2026cse@sece.ac.in',
+      'raksitha.m2026cse@sece.ac.in',
+      'ramakrishnanpalanisamy.2026cse@sece.ac.in',
+      'ratchitha.ms2026cse@sece.ac.in',
+      'rathimozhi.k2026cse@sece.ac.in',
+      'rekashini.m2026cse@sece.ac.in',
+      'rethika.ns2026cse@sece.ac.in',
+      'rijoedward.t2026cse@sece.ac.in',
+      'rishikesh.b2026cse@sece.ac.in',
+      'rishikesh.k2026cse@sece.ac.in',
+      'rishwanth.vg2026cse@sece.ac.in',
+      'risonantoniachrisr2026cse@sece.ac.in',
+      'rithika.t2026cse@sece.ac.in',
+      'rohitpatel.2026cse@sece.ac.in',
+      'rohitshriwastav.2026cse@sece.ac.in',
+      'roshan.b2026cse@sece.ac.in',
+      'rubesh.r2026cse@sece.ac.in',
+      'ruthreshwaran.r2026cse@sece.ac.in',
+      'sabarinathan.m2026cse@sece.ac.in',
+      'sachita.j2026cse@sece.ac.in',
+      'sahaanaselvaraj.2026cse@sece.ac.in',
+      'saiakshit.s2026cse@sece.ac.in',
+      'samreenaa.u2026cse@sece.ac.in',
+      'sanghamitra.s2026cse@sece.ac.in'
+    ];
 
-    const student2 = await User.create({
-      name: 'Priya Sundaram',
-      email: 'priya@livecode.edu',
-      passwordHash: studentPasswordHash,
-      role: 'student',
-      studentId: '24CSE042',
-      department: 'Computer Science & Engineering',
-      section: 'A',
-      year: 1
-    });
+    const deriveStudentName = (email: string) => {
+      let userPart = email.split('@')[0];
+      userPart = userPart.replace(/\.2026(cse)?/gi, '').replace(/2026(cse)?/gi, '');
+      const tokens = userPart.split(/[._]/).filter(Boolean);
+      return tokens.map((t) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()).join(' ');
+    };
 
-    const student3 = await User.create({
-      name: 'Kavin Raj',
-      email: 'kavin@livecode.edu',
-      passwordHash: studentPasswordHash,
-      role: 'student',
-      studentId: '24CSE089',
-      department: 'Information Technology',
-      section: 'B',
-      year: 1
-    });
+    console.log(`[Seed] Hashing passwords for ${rawStudentEmails.length} SECE students (Password = Email)...`);
+    const studentUserDocs = await Promise.all(
+      rawStudentEmails.map(async (email, index) => {
+        const cleanedEmail = email.toLowerCase().trim();
+        const hash = await bcrypt.hash(cleanedEmail, 8);
+        const rollNum = String(index + 1).padStart(3, '0');
+        return {
+          name: deriveStudentName(cleanedEmail),
+          email: cleanedEmail,
+          passwordHash: hash,
+          role: 'student' as const,
+          studentId: `26CSE${rollNum}`,
+          department: 'Computer Science & Engineering',
+          section: 'C',
+          year: 2026
+        };
+      })
+    );
 
-    console.log('[Seed] Created 1 Admin and 3 Student accounts');
+    const createdStudents = await User.insertMany(studentUserDocs);
+    console.log(`[Seed] Created 1 Admin (${adminEmail}) and ${createdStudents.length} Students successfully!`);
 
-    // 2. Create Realistic Question Bank
+    // 2. Questions from Sri Eshwar College of Engineering - COMPILER CLASH : Battle of Bug
     const questionsData = [
       {
-        title: 'Find Maximum in Array',
-        description: 'Write a program that takes an integer array of size N and outputs the maximum element present in the array.',
-        language: 'C++ / Python / Java / C',
+        title: 'Q1. Hidden Infinite Loop',
+        description: `Analyze the given C++ code snippet containing a loop:
+
+\`\`\`cpp
+int n = 10;
+while(n)
+{
+    if(n % 2 == 0)
+        n += 2;
+    else
+        n -= 3;
+    cout << n << " ";
+}
+\`\`\`
+
+**Tasks:**
+1. Explain why the loop may never terminate.
+2. Modify the logic so the program terminates cleanly.
+3. Print the values generated before termination.`,
+        language: 'C++ / C',
         difficulty: 'easy',
-        category: 'Arrays',
+        category: 'Debugging & Loops',
         marks: 10,
         timeLimitMinutes: 15,
-        inputFormat: 'Line 1: N (size of array)\nLine 2: N space-separated integers',
-        outputFormat: 'Single integer representing the maximum value',
-        constraints: '1 <= N <= 10^5\n-10^9 <= Arr[i] <= 10^9',
-        sampleInput: '5\n12 45 2 98 33',
-        sampleOutput: '98',
+        inputFormat: 'None (Self-contained loop logic analysis)',
+        outputFormat: 'Part 1: Reason for non-termination\nPart 2: Modified loop code\nPart 3: Space-separated generated values before termination',
+        constraints: 'Standard C++ execution',
+        sampleInput: 'No input required',
+        sampleOutput: 'Sequence of values generated before termination',
         active: true,
         createdBy: admin._id
       },
       {
-        title: 'Check Palindrome String',
-        description: 'Given a string S, determine if it reads the same backward as forward, ignoring casing and alphanumeric spaces.',
-        language: 'C++ / Python / Java / C',
+        title: 'Q2. What Will Be Printed?',
+        description: `Determine the output of the following C++ code snippet:
+
+\`\`\`cpp
+int x = 1;
+while(x <= 20)
+{
+    if(x % 2 == 0)
+    {
+        cout << x << " ";
+        x += 3;
+    }
+    else
+    {
+        x += 2;
+    }
+}
+\`\`\`
+
+**Tasks:**
+1. Determine what will be printed by the loop.
+2. Modify the code so that it prints only the even numbers from 1 to 500.`,
+        language: 'C++ / C',
         difficulty: 'easy',
-        category: 'Strings',
+        category: 'Control Flow & Loops',
         marks: 10,
         timeLimitMinutes: 15,
-        inputFormat: 'A single string S',
-        outputFormat: 'Print "YES" if palindrome, else "NO"',
-        constraints: '1 <= |S| <= 10^4',
-        sampleInput: 'racecar',
-        sampleOutput: 'YES',
+        inputFormat: 'None',
+        outputFormat: 'Part 1: Exact space-separated numbers printed by the code\nPart 2: Modified code printing even numbers from 1 to 500',
+        constraints: '1 <= x <= 500',
+        sampleInput: 'No input required',
+        sampleOutput: '3 6 11 14 19\n(Followed by even sequence up to 500)',
         active: true,
         createdBy: admin._id
       },
       {
-        title: 'Prime Factorization',
-        description: 'Given a positive integer N, print all of its prime factors in ascending order along with their multiplicities.',
-        language: 'C++ / Python / Java / C',
+        title: 'Q3. Diagonal Matrix Transformation',
+        description: `Determine the output of the following nested loop program:
+
+\`\`\`cpp
+for(int i = 1; i <= 4; i++)
+{
+    for(int j = 1; j <= 5; j++)
+    {
+        if(i == j)
+            continue;
+        cout << i << j << " ";
+    }
+    cout << endl;
+}
+\`\`\`
+
+**Tasks:**
+1. Determine the output of the given nested loop.
+2. Modify the program so that the diagonal elements (where i == j) are printed as 'X'.`,
+        language: 'C++ / C',
         difficulty: 'medium',
-        category: 'Number Theory',
+        category: 'Nested Loops & Patterns',
         marks: 15,
         timeLimitMinutes: 20,
-        inputFormat: 'An integer N',
-        outputFormat: 'Prime factors and powers formatted as p1^k1 * p2^k2...',
-        constraints: '2 <= N <= 10^8',
-        sampleInput: '60',
-        sampleOutput: '2^2 * 3^1 * 5^1',
+        inputFormat: 'None (i: 1 to 4, j: 1 to 5)',
+        outputFormat: 'Part 1: The original output without diagonal elements\nPart 2: 4 lines of 5 space-separated tokens where diagonal elements display as X',
+        constraints: '1 <= i <= 4, 1 <= j <= 5',
+        sampleInput: 'No input required',
+        sampleOutput: `X 12 13 14 15
+21 X 23 24 25
+31 32 X 34 35
+41 42 43 X 45`,
         active: true,
         createdBy: admin._id
       },
       {
-        title: 'Matrix Spiral Order Traversal',
-        description: 'Given an M x N matrix, return all elements of the matrix in clockwise spiral order.',
+        title: 'Q4. Digit Frequency Without Arrays',
+        description: `Given a number, determine how many times each digit from 0 to 9 occurs.
+
+**Constraint**: You MUST solve this **without using arrays**, vectors, lists, or hash tables.
+
+**Example:**
+Input:
+\`1200332120\`
+
+Output:
+\`\`\`
+0 : 3
+1 : 2
+2 : 3
+3 : 2
+4 : 0
+\`\`\``,
         language: 'C++ / Python / Java / C',
         difficulty: 'medium',
-        category: '2D Arrays',
+        category: 'Math & Logic',
+        marks: 15,
+        timeLimitMinutes: 20,
+        inputFormat: 'A single positive integer N',
+        outputFormat: 'Print each digit from 0 to 9 and its occurrence count in the format: "<digit> : <count>"',
+        constraints: '1 <= N <= 10^18. Do NOT use arrays, vectors, or collection data structures.',
+        sampleInput: '1200332120',
+        sampleOutput: `0 : 3
+1 : 2
+2 : 3
+3 : 2
+4 : 0
+5 : 0
+6 : 0
+7 : 0
+8 : 0
+9 : 0`,
+        active: true,
+        createdBy: admin._id
+      },
+      {
+        title: 'Q5. Happy Number Detection',
+        description: `A number is called **Happy** if repeatedly replacing it with the sum of the squares of its digits eventually produces 1.
+
+**Example:**
+For N = 19:
+19
+1² + 9² = 82
+8² + 2² = 68
+6² + 8² = 100
+1² + 0² + 0² = 1
+Since 1 is reached, 19 is a Happy Number!
+
+**Tasks:**
+1. Write a program to check whether N is happy.
+2. Print every intermediate value.
+3. Detect if the process enters a cycle.`,
+        language: 'C++ / Python / Java / C',
+        difficulty: 'medium',
+        category: 'Number Theory & Algorithms',
         marks: 15,
         timeLimitMinutes: 25,
-        inputFormat: 'M and N followed by M lines containing N integers each',
-        outputFormat: 'Space-separated integers visited in clockwise spiral order',
-        constraints: '1 <= M, N <= 100\n-1000 <= Matrix[i][j] <= 1000',
-        sampleInput: '3 3\n1 2 3\n4 5 6\n7 8 9',
-        sampleOutput: '1 2 3 6 9 8 7 4 5',
+        inputFormat: 'A single positive integer N',
+        outputFormat: 'Print each intermediate value on a new line, concluding with "Happy Number" or "Cycle Detected / Not a Happy Number".',
+        constraints: '1 <= N <= 10^6',
+        sampleInput: '19',
+        sampleOutput: `82
+68
+100
+1
+Happy Number`,
         active: true,
         createdBy: admin._id
       },
       {
-        title: 'Merge K Sorted Intervals',
-        description: 'Given a collection of intervals, merge all overlapping intervals and return the simplified non-overlapping set.',
+        title: 'Q6. Kaprekar Number Challenge',
+        description: `A number N is called a **Kaprekar number** if:
+1. Square N: calculate N²
+2. Split the square into two parts.
+3. Add the two parts. The result equals N.
+
+**Example:**
+45² = 2025
+20 + 25 = 45
+Therefore 45 is a Kaprekar number.
+
+**Task:**
+Print all Kaprekar numbers between 1 and 1000.`,
         language: 'C++ / Python / Java / C',
         difficulty: 'hard',
-        category: 'Sorting & Greedy',
+        category: 'Math & Algorithms',
         marks: 20,
         timeLimitMinutes: 30,
-        inputFormat: 'N followed by N lines of [start, end]',
-        outputFormat: 'Merged intervals sorted by start time',
-        constraints: '1 <= N <= 10^5\n0 <= start <= end <= 10^9',
-        sampleInput: '4\n1 3\n2 6\n8 10\n15 18',
-        sampleOutput: '[1,6] [8,10] [15,18]',
-        active: true,
-        createdBy: admin._id
-      },
-      {
-        title: 'Count Vowels and Consonants',
-        description: 'Read an English sentence and output the count of vowels, consonants, and digits separately.',
-        language: 'C++ / Python / Java / C',
-        difficulty: 'easy',
-        category: 'Strings',
-        marks: 10,
-        timeLimitMinutes: 15,
-        inputFormat: 'A single line of text',
-        outputFormat: 'Vowels: X, Consonants: Y, Digits: Z',
-        constraints: '1 <= length <= 1000',
-        sampleInput: 'Antigravity Code 2026',
-        sampleOutput: 'Vowels: 6, Consonants: 9, Digits: 4',
+        inputFormat: 'None (Check range 1 to 1000)',
+        outputFormat: 'Print all Kaprekar numbers between 1 and 1000 separated by spaces.',
+        constraints: '1 <= N <= 1000',
+        sampleInput: 'No input required',
+        sampleOutput: '1 9 45 55 99 297 703 999',
         active: true,
         createdBy: admin._id
       }
@@ -183,254 +359,47 @@ export const seedDatabase = async () => {
     const createdQuestions = await Question.insertMany(questionsData);
     console.log(`[Seed] Created ${createdQuestions.length} programming questions`);
 
-    // 3. Create Active Assessment
+    // 3. Create Active Assessment for Compiler Clash
     const now = new Date();
     const assessment = await Assessment.create({
-      title: 'First Year Algorithmic Sprint 2026',
-      description: 'Departmental Coding Evaluation for First Year Engineering Students. Randomly assigned algorithmic problems with runtime screenshot evaluation.',
-      totalQuestions: 5,
-      durationMinutes: 60,
+      title: 'COMPILER CLASH : Battle of Bug',
+      description: 'Department of Computer and Communication Engineering, Academic Year 2026-2027 [ODD SEM] - Sri Eshwar College of Engineering. Live code assessment, bug battle, and algorithmic challenges.',
+      totalQuestions: 6,
+      durationMinutes: 90,
       status: 'LIVE',
       startsAt: now,
-      endsAt: new Date(now.getTime() + 60 * 60 * 1000),
+      endsAt: new Date(now.getTime() + 90 * 60 * 1000),
       questionPool: createdQuestions.map((q) => q._id),
       createdBy: admin._id
     });
 
     console.log(`[Seed] Created Assessment: "${assessment.title}" (Status: LIVE)`);
 
-    // 4. Ensure demo screenshot files exist on disk
+    // 4. Ensure uploads directory exists for real student submissions
     const uploadsDir = path.join(__dirname, '../../uploads/submissions');
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    // Create realistic sample code screenshots as SVG/PNG
-    const demoSvgContent = (studentName: string, qTitle: string, statusText: string) => `
-<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
-  <rect width="800" height="500" rx="12" fill="#1e1e2e"/>
-  <rect width="800" height="40" rx="12" fill="#181825"/>
-  <circle cx="25" cy="20" r="6" fill="#f38ba8"/>
-  <circle cx="45" cy="20" r="6" fill="#f9e2af"/>
-  <circle cx="65" cy="20" r="6" fill="#a6e3a1"/>
-  <text x="400" y="25" fill="#a6adc8" font-family="monospace" font-size="13" text-anchor="middle">terminal - ${studentName} - solution.cpp</text>
-  
-  <rect x="20" y="55" width="760" height="280" rx="8" fill="#11111b"/>
-  <text x="35" y="85" fill="#89b4fa" font-family="monospace" font-size="14">#include &lt;iostream&gt;</text>
-  <text x="35" y="105" fill="#89b4fa" font-family="monospace" font-size="14">#include &lt;vector&gt;</text>
-  <text x="35" y="125" fill="#cdd6f4" font-family="monospace" font-size="14">using namespace std;</text>
-  <text x="35" y="155" fill="#a6e3a1" font-family="monospace" font-size="14">// Solution for: ${qTitle}</text>
-  <text x="35" y="175" fill="#fab387" font-family="monospace" font-size="14">int main() {</text>
-  <text x="55" y="195" fill="#cdd6f4" font-family="monospace" font-size="14">    int n; if (!(cin &gt;&gt; n)) return 0;</text>
-  <text x="55" y="215" fill="#cdd6f4" font-family="monospace" font-size="14">    vector&lt;int&gt; a(n);</text>
-  <text x="55" y="235" fill="#cdd6f4" font-family="monospace" font-size="14">    for (int i=0; i&lt;n; i++) cin &gt;&gt; a[i];</text>
-  <text x="55" y="255" fill="#89dceb" font-family="monospace" font-size="14">    // Algorithm executed cleanly</text>
-  <text x="55" y="275" fill="#cdd6f4" font-family="monospace" font-size="14">    cout &lt;&lt; "Execution Result: ${statusText}" &lt;&lt; endl;</text>
-  <text x="55" y="295" fill="#fab387" font-family="monospace" font-size="14">    return 0;</text>
-  <text x="35" y="315" fill="#fab387" font-family="monospace" font-size="14">}</text>
-
-  <rect x="20" y="350" width="760" height="125" rx="8" fill="#181825" stroke="#313244"/>
-  <text x="35" y="375" fill="#f9e2af" font-family="monospace" font-size="13">$ g++ -O3 solution.cpp -o solution &amp;&amp; ./solution</text>
-  <text x="35" y="400" fill="#a6e3a1" font-family="monospace" font-size="13">[OUTPUT] Verified Output matching all test cases.</text>
-  <text x="35" y="425" fill="#94e2d5" font-family="monospace" font-size="13">[TIME] 0.004s | Memory: 1.2MB | Passed: 100%</text>
-  <text x="35" y="450" fill="#6c7086" font-family="monospace" font-size="12">Verified by Live Code Assessment System</text>
-</svg>
-`;
-
-    const sub1File = 'demo-submission-arun-q1.svg';
-    const sub2File = 'demo-submission-priya-q1.svg';
-    const sub3File = 'demo-submission-kavin-q2.svg';
-
-    fs.writeFileSync(path.join(uploadsDir, sub1File), demoSvgContent('Arun Kumar', createdQuestions[0].title, 'Optimal 98'));
-    fs.writeFileSync(path.join(uploadsDir, sub2File), demoSvgContent('Priya Sundaram', createdQuestions[0].title, 'Optimal 98'));
-    fs.writeFileSync(path.join(uploadsDir, sub3File), demoSvgContent('Kavin Raj', createdQuestions[1].title, 'YES'));
-
-    // 5. Create Deterministic Assignments for all 3 Students
-    // Student 1: Arun (Q0, Q1, Q2, Q3, Q4)
-    const assign1 = await StudentAssignment.create({
+    // 5. Create Assignments for all 67 Students (All 6 Questions - Pure Clean State)
+    const assignmentDocs = createdStudents.map((st) => ({
       assessmentId: assessment._id,
-      studentId: student1._id,
-      questions: [
-        { questionId: createdQuestions[0]._id, order: 1, status: 'evaluated' },
-        { questionId: createdQuestions[1]._id, order: 2, status: 'submitted' },
-        { questionId: createdQuestions[2]._id, order: 3, status: 'pending' },
-        { questionId: createdQuestions[3]._id, order: 4, status: 'pending' },
-        { questionId: createdQuestions[4]._id, order: 5, status: 'pending' }
-      ]
-    });
+      studentId: st._id,
+      questions: createdQuestions.map((q, qIdx) => ({
+        questionId: q._id,
+        order: qIdx + 1,
+        status: 'pending' as const
+      }))
+    }));
 
-    // Student 2: Priya (Q1, Q0, Q3, Q2, Q5)
-    const assign2 = await StudentAssignment.create({
-      assessmentId: assessment._id,
-      studentId: student2._id,
-      questions: [
-        { questionId: createdQuestions[1]._id, order: 1, status: 'evaluated' },
-        { questionId: createdQuestions[0]._id, order: 2, status: 'evaluated' },
-        { questionId: createdQuestions[3]._id, order: 3, status: 'submitted' },
-        { questionId: createdQuestions[2]._id, order: 4, status: 'pending' },
-        { questionId: createdQuestions[5]._id, order: 5, status: 'pending' }
-      ]
-    });
+    await StudentAssignment.insertMany(assignmentDocs);
 
-    // Student 3: Kavin (Q0, Q2, Q4, Q1, Q5)
-    const assign3 = await StudentAssignment.create({
-      assessmentId: assessment._id,
-      studentId: student3._id,
-      questions: [
-        { questionId: createdQuestions[0]._id, order: 1, status: 'submitted' },
-        { questionId: createdQuestions[2]._id, order: 2, status: 'pending' },
-        { questionId: createdQuestions[4]._id, order: 3, status: 'pending' },
-        { questionId: createdQuestions[1]._id, order: 4, status: 'pending' },
-        { questionId: createdQuestions[5]._id, order: 5, status: 'pending' }
-      ]
-    });
-
-    // 6. Create Initial Submissions
-    // Arun submitted Q1 (Evaluated) and Q2 (Pending evaluation)
-    const subArunQ1 = await Submission.create({
-      assessmentId: assessment._id,
-      studentId: student1._id,
-      questionId: createdQuestions[0]._id,
-      screenshotUrl: `/uploads/submissions/${sub1File}`,
-      codeSnippet: '// Solution by Arun Kumar\nint maxVal = arr[0];\nfor (int i=1; i<n; i++) if(arr[i]>maxVal) maxVal=arr[i];',
-      submittedAt: new Date(now.getTime() - 25 * 60 * 1000),
-      status: 'EVALUATED'
-    });
-
-    const subArunQ2 = await Submission.create({
-      assessmentId: assessment._id,
-      studentId: student1._id,
-      questionId: createdQuestions[1]._id,
-      screenshotUrl: `/uploads/submissions/${sub1File}`,
-      codeSnippet: '// Palindrome check\nint l = 0, r = s.length() - 1;\nwhile(l < r) { if(s[l++] != s[r--]) return "NO"; }\nreturn "YES";',
-      submittedAt: new Date(now.getTime() - 15 * 60 * 1000),
-      status: 'SUBMITTED' // PENDING REVIEW FOR ADMIN!
-    });
-
-    // Priya submitted Q1 (Evaluated) and Q0 (Evaluated) and Q3 (Pending)
-    const subPriyaQ1 = await Submission.create({
-      assessmentId: assessment._id,
-      studentId: student2._id,
-      questionId: createdQuestions[1]._id,
-      screenshotUrl: `/uploads/submissions/${sub2File}`,
-      codeSnippet: '# Priya Python Solution\ndef is_palindrome(s):\n    cleaned = "".join(c.lower() for c in s if c.isalnum())\n    return cleaned == cleaned[::-1]',
-      submittedAt: new Date(now.getTime() - 30 * 60 * 1000),
-      status: 'EVALUATED'
-    });
-
-    const subPriyaQ0 = await Submission.create({
-      assessmentId: assessment._id,
-      studentId: student2._id,
-      questionId: createdQuestions[0]._id,
-      screenshotUrl: `/uploads/submissions/${sub2File}`,
-      codeSnippet: 'print(max(int(x) for x in input().split()))',
-      submittedAt: new Date(now.getTime() - 20 * 60 * 1000),
-      status: 'EVALUATED'
-    });
-
-    const subPriyaQ3 = await Submission.create({
-      assessmentId: assessment._id,
-      studentId: student2._id,
-      questionId: createdQuestions[3]._id,
-      screenshotUrl: `/uploads/submissions/${sub2File}`,
-      codeSnippet: '// Matrix spiral traversal\n// Full traversal implemented with 4 boundaries',
-      submittedAt: new Date(now.getTime() - 10 * 60 * 1000),
-      status: 'SUBMITTED' // PENDING REVIEW FOR ADMIN!
-    });
-
-    // Kavin submitted Q0 (Pending evaluation)
-    const subKavinQ0 = await Submission.create({
-      assessmentId: assessment._id,
-      studentId: student3._id,
-      questionId: createdQuestions[0]._id,
-      screenshotUrl: `/uploads/submissions/${sub3File}`,
-      codeSnippet: 'int mx = -1e9;\nfor(auto x: v) mx = max(mx, x);\ncout << mx;',
-      submittedAt: new Date(now.getTime() - 5 * 60 * 1000),
-      status: 'SUBMITTED' // PENDING REVIEW FOR ADMIN!
-    });
-
-    // 7. Seed Initial Evaluations
-    // Arun evaluated on Q1: 9/10
-    const evalArunQ1 = await Evaluation.create({
-      assessmentId: assessment._id,
-      submissionId: subArunQ1._id,
-      studentId: student1._id,
-      questionId: createdQuestions[0]._id,
-      marksObtained: 9,
-      maximumMarks: 10,
-      feedback: 'Excellent linear scan logic. Well indented.',
-      evaluatedBy: admin._id,
-      evaluatedAt: new Date(now.getTime() - 20 * 60 * 1000)
-    });
-
-    // Priya evaluated on Q1: 10/10, and Q0: 9/10
-    const evalPriyaQ1 = await Evaluation.create({
-      assessmentId: assessment._id,
-      submissionId: subPriyaQ1._id,
-      studentId: student2._id,
-      questionId: createdQuestions[1]._id,
-      marksObtained: 10,
-      maximumMarks: 10,
-      feedback: 'Clean pythonic two-pointer palindrome check. Perfect!',
-      evaluatedBy: admin._id,
-      evaluatedAt: new Date(now.getTime() - 22 * 60 * 1000)
-    });
-
-    const evalPriyaQ0 = await Evaluation.create({
-      assessmentId: assessment._id,
-      submissionId: subPriyaQ0._id,
-      studentId: student2._id,
-      questionId: createdQuestions[0]._id,
-      marksObtained: 9,
-      maximumMarks: 10,
-      feedback: 'Concise solution. Passed all edge test cases.',
-      evaluatedBy: admin._id,
-      evaluatedAt: new Date(now.getTime() - 16 * 60 * 1000)
-    });
-
-    // 8. Add Audit Logs
-    await AuditLog.create([
-      {
-        adminId: admin._id,
-        action: 'MARK_AWARDED',
-        submissionId: subArunQ1._id,
-        studentId: student1._id,
-        questionId: createdQuestions[0]._id,
-        newMarks: 9,
-        details: 'Initial evaluation for Arun Kumar on Find Maximum in Array',
-        timestamp: new Date(now.getTime() - 20 * 60 * 1000)
-      },
-      {
-        adminId: admin._id,
-        action: 'MARK_AWARDED',
-        submissionId: subPriyaQ1._id,
-        studentId: student2._id,
-        questionId: createdQuestions[1]._id,
-        newMarks: 10,
-        details: 'Initial evaluation for Priya Sundaram on Check Palindrome String',
-        timestamp: new Date(now.getTime() - 22 * 60 * 1000)
-      },
-      {
-        adminId: admin._id,
-        action: 'MARK_AWARDED',
-        submissionId: subPriyaQ0._id,
-        studentId: student2._id,
-        questionId: createdQuestions[0]._id,
-        newMarks: 9,
-        details: 'Initial evaluation for Priya Sundaram on Find Maximum in Array',
-        timestamp: new Date(now.getTime() - 16 * 60 * 1000)
-      }
-    ]);
-
-    console.log('[Seed] Database successfully seeded with:');
-    console.log(' - 1 Admin (admin@livecode.edu / AdminPassword123!)');
-    console.log(' - 3 Students:');
-    console.log('   1. Arun Kumar (arun@livecode.edu / StudentPass123! | 24CSE001)');
-    console.log('   2. Priya Sundaram (priya@livecode.edu / StudentPass123! | 24CSE042)');
-    console.log('   3. Kavin Raj (kavin@livecode.edu / StudentPass123! | 24CSE089)');
-    console.log(' - 6 Rich Coding Questions');
-    console.log(' - 1 LIVE Assessment');
-    console.log(' - 3 Pending Submissions ready for live evaluation testing!');
+    console.log('[Seed] Database successfully seeded with ONLY official contest data:');
+    console.log(` - 1 Admin: ${adminEmail} (Password: ${adminEmail})`);
+    console.log(` - ${createdStudents.length} Students: All configured with Email as both Username and Password!`);
+    console.log(' - 6 Compiler Clash Coding Questions (Q1 to Q6)');
+    console.log(' - 1 LIVE Assessment: "COMPILER CLASH : Battle of Bug"');
+    console.log(' - Zero mock submissions / Zero mock evaluations - completely clean state!');
   } catch (error) {
     console.error('[Seed] Error seeding database:', error);
   }

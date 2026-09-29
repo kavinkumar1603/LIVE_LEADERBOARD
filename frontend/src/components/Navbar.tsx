@@ -11,7 +11,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  assessmentTitle = '1st Year Algorithmic Sprint 2026',
+  assessmentTitle = 'COMPILER CLASH : Battle of Bug',
   assessmentStatus = 'LIVE'
 }) => {
   const { user, logout, switchAccount } = useAuth();
@@ -33,13 +33,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       socket.off('disconnect', onDisconnect);
     };
   }, []);
-
-  const demoAccounts = [
-    { label: '👑 Admin (Prof. Vikram)', email: 'admin@livecode.edu', pass: 'AdminPassword123!', role: 'admin' },
-    { label: '🧑‍💻 Student 1: Arun (24CSE001)', email: 'arun@livecode.edu', pass: 'StudentPass123!', role: 'student' },
-    { label: '🧑‍💻 Student 2: Priya (24CSE042)', email: 'priya@livecode.edu', pass: 'StudentPass123!', role: 'student' },
-    { label: '🧑‍💻 Student 3: Kavin (24CSE089)', email: 'kavin@livecode.edu', pass: 'StudentPass123!', role: 'student' },
-  ];
 
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-200/80 px-4 lg:px-8 py-3.5 backdrop-blur-xl bg-white/80">
@@ -80,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </div>
 
-        {/* Right: User Pill, Quick Switcher, & Logout */}
+        {/* Right: User Pill & Sign Out */}
         <div className="flex items-center gap-2 sm:gap-3">
           {user && (
             <div className="relative">
@@ -98,41 +91,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="hidden sm:block">
                   <p className="text-xs font-semibold text-slate-900 leading-none">{user.name}</p>
                   <p className="text-[10px] text-slate-500 capitalize mt-0.5">
-                    {user.role === 'admin' ? 'Faculty Evaluator' : `${user.studentId} • Section ${user.section || 'A'}`}
+                    {user.role === 'admin' ? 'Faculty Evaluator' : `Section ${user.section || 'C'}`}
                   </p>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
               </button>
 
-              {/* Quick Switch Dropdown */}
+              {/* Profile Dropdown */}
               {dropdownOpen && (
                 <div 
-                  className="absolute right-0 mt-2 w-64 glass-panel rounded-3xl p-2.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 duration-150 bg-white"
+                  className="absolute right-0 mt-2 w-72 glass-panel rounded-3xl p-4 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 duration-150 bg-white"
                   onClick={() => setDropdownOpen(false)}
                 >
-                  <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-violet-600" /> Switch Demo Account
-                    </p>
+                  <div className="pb-3 border-b border-slate-100">
+                    <p className="text-sm font-bold text-slate-900">{user.name}</p>
+                    <p className="text-xs text-slate-500 font-mono mt-0.5 truncate">{user.email}</p>
+                    <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
+                      {user.role === 'admin' ? 'Faculty Evaluator' : `Section ${user.section || 'C'}`}
+                    </span>
                   </div>
-                  {demoAccounts.map((acc, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => switchAccount(acc.email, acc.pass)}
-                      className={`w-full text-left px-3 py-2.5 rounded-2xl text-xs flex items-center justify-between transition-colors ${
-                        user.email === acc.email
-                          ? 'bg-violet-50 text-violet-700 font-bold border border-violet-200'
-                          : 'text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span>{acc.label}</span>
-                      {user.email === acc.email && <span className="text-[10px] text-violet-600 font-bold">Active</span>}
-                    </button>
-                  ))}
-                  <div className="border-t border-slate-100 mt-1.5 pt-1.5">
+                  <div className="pt-2">
                     <button
                       onClick={() => logout()}
-                      className="w-full text-left px-3 py-2 rounded-2xl text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors font-semibold"
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors font-semibold"
                     >
                       <LogOut className="w-3.5 h-3.5" /> Sign Out
                     </button>

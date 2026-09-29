@@ -62,7 +62,7 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ onClose }) => {
                         <span className="text-[10px] text-slate-400">• {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                       </div>
                       <p className="text-xs text-slate-600 mt-1">
-                        Student: <span className="font-semibold text-slate-900">{log.studentId?.name || 'N/A'}</span> ({log.studentId?.studentId})
+                        Student: <span className="font-semibold text-slate-900">{log.studentId?.name || 'N/A'}</span>
                         {log.questionId && (
                           <> • Question: <span className="text-violet-700 font-medium">{log.questionId.title}</span></>
                         )}

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { OvalSidebar } from '../components/OvalSidebar';
 import { LeaderboardTable } from '../components/LeaderboardTable';
@@ -31,8 +32,11 @@ import {
   BookOpen
 } from 'lucide-react';
 
-export default function Home() {
-  const { user, login, switchAccount } = useAuth();
+function ArenaPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { user, loading, login, switchAccount } = useAuth();
 
   // Common State
   const [activeTab, setActiveTab] = useState<'questions' | 'leaderboard' | 'submissions' | 'bank'>('questions');
@@ -64,7 +68,6 @@ export default function Home() {
     const socket = getSocket();
 
     const onLeaderboardUpdate = (data: { assessmentId: string; leaderboard: LeaderboardEntry[] }) => {
-      console.log('[Socket.IO] Leaderboard updated in real time:', data);
       setLeaderboard(data.leaderboard);
       if (user?.role === 'admin') {
         fetchAdminDashboard();
@@ -74,7 +77,6 @@ export default function Home() {
     };
 
     const onScoreUpdate = (data: any) => {
-      console.log('[Socket.IO] Private student score updated:', data);
       fetchStudentDashboard();
     };
 
@@ -87,20 +89,129 @@ export default function Home() {
     };
   }, [user]);
 
-  // Initial Data Fetching based on role (Only after login!)
+  // Initial Data Fetching based on role
   useEffect(() => {
     if (user?.role === 'student') {
       fetchStudentDashboard();
       fetchLeaderboard();
-      setActiveTab('questions');
     } else if (user?.role === 'admin') {
       fetchAdminDashboard();
       fetchSubmissions();
       fetchLeaderboard();
       fetchQuestionBank();
-      setActiveTab('submissions');
     }
   }, [user]);
+
+  // Router & URL Tab Synchronization (Preserves exact page & modal on refresh!)
+  useEffect(() => {
+    if (!user) return;
+
+    const urlTab = searchParams ? (searchParams.get('tab') as any) : null;
+    const savedTab = typeof window !== 'undefined' ? localStorage.getItem(`live_tab_${user.role}`) : null;
+
+    let targetTab: 'questions' | 'leaderboard' | 'submissions' | 'bank';
+    if (user.role === 'admin') {
+      const validAdminTabs = ['submissions', 'leaderboard', 'bank'];
+      if (urlTab && validAdminTabs.includes(urlTab)) {
+        targetTab = urlTab;
+      } else if (savedTab && validAdminTabs.includes(savedTab)) {
+        targetTab = savedTab as any;
+      } else {
+        targetTab = 'submissions';
+      }
+    } else {
+      const validStudentTabs = ['questions', 'leaderboard'];
+      if (urlTab && validStudentTabs.includes(urlTab)) {
+        targetTab = urlTab;
+      } else if (savedTab && validStudentTabs.includes(savedTab)) {
+        targetTab = savedTab as any;
+      } else {
+        targetTab = 'questions';
+      }
+    }
+
+    setActiveTab(targetTab);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`live_tab_${user.role}`, targetTab);
+    }
+
+    // Restore opened question modal if present in URL
+    const urlQuestion = searchParams ? searchParams.get('question') : null;
+    if (urlQuestion && user.role === 'student') {
+      setSelectedQuestionId(urlQuestion);
+    }
+
+    // Restore submission filter if present in URL
+    const urlFilter = searchParams ? searchParams.get('filter') : null;
+    if (urlFilter && ['ALL', 'PENDING', 'EVALUATED'].includes(urlFilter)) {
+      setSubFilter(urlFilter as any);
+    }
+
+    // Sync URL query without unnecessary reload
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
+    params.set('tab', targetTab);
+    const queryString = params.toString();
+    if (typeof window !== 'undefined' && window.location.search.slice(1) !== queryString) {
+      router.replace(`/?${queryString}`, { scroll: false });
+    }
+  }, [user, searchParams]);
+
+  // Navigation handlers syncing state + router
+  const navigateTab = (newTab: 'questions' | 'leaderboard' | 'submissions' | 'bank') => {
+    setActiveTab(newTab);
+    if (typeof window !== 'undefined' && user) {
+      localStorage.setItem(`live_tab_${user.role}`, newTab);
+    }
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
+    params.set('tab', newTab);
+    if (newTab !== 'questions') {
+      params.delete('question');
+      setSelectedQuestionId(null);
+    }
+    if (newTab !== 'submissions') {
+      params.delete('submission');
+      setSelectedSubmission(null);
+    }
+    router.replace(`/?${params.toString()}`, { scroll: false });
+  };
+
+  const openQuestion = (questionId: string) => {
+    setSelectedQuestionId(questionId);
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
+    params.set('tab', 'questions');
+    params.set('question', questionId);
+    router.replace(`/?${params.toString()}`, { scroll: false });
+  };
+
+  const closeQuestion = () => {
+    setSelectedQuestionId(null);
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
+    params.delete('question');
+    router.replace(`/?${params.toString()}`, { scroll: false });
+  };
+
+  const openSubmission = (sub: SubmissionItem) => {
+    setSelectedSubmission(sub);
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
+    params.set('tab', 'submissions');
+    params.set('submission', sub.id);
+    router.replace(`/?${params.toString()}`, { scroll: false });
+  };
+
+  const closeSubmission = () => {
+    setSelectedSubmission(null);
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
+    params.delete('submission');
+    router.replace(`/?${params.toString()}`, { scroll: false });
+  };
+
+  const changeSubFilter = (filter: 'ALL' | 'PENDING' | 'EVALUATED') => {
+    setSubFilter(filter);
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
+    params.set('tab', 'submissions');
+    params.set('filter', filter);
+    router.replace(`/?${params.toString()}`, { scroll: false });
+  };
 
   const fetchLeaderboard = async () => {
     try {
@@ -156,6 +267,12 @@ export default function Home() {
       const res = await apiRequest('/admin/submissions');
       if (res.success && res.submissions) {
         setSubmissions(res.submissions);
+        // If submission modal was active before refresh, restore it
+        const urlSubId = searchParams ? searchParams.get('submission') : null;
+        if (urlSubId) {
+          const match = res.submissions.find((s: SubmissionItem) => s.id === urlSubId);
+          if (match) setSelectedSubmission(match);
+        }
       }
     } catch (err) {
       console.error('Error fetching submissions:', err);
@@ -184,113 +301,55 @@ export default function Home() {
     setLoginLoading(false);
   };
 
-  const demoCards = [
-    {
-      role: 'admin',
-      label: '👑 Admin (Faculty)',
-      name: 'Prof. Vikram Sharma',
-      email: 'admin@livecode.edu',
-      pass: 'AdminPassword123!',
-      desc: 'Evaluate submissions, award marks, view audit logs & manage contest.'
-    },
-    {
-      role: 'student',
-      label: '🧑‍💻 Student 1',
-      name: 'Arun Kumar',
-      email: 'arun@livecode.edu',
-      pass: 'StudentPass123!',
-      desc: 'Roll No: 24CSE001 • Section A • Has evaluated & pending submissions.'
-    },
-    {
-      role: 'student',
-      label: '🧑‍💻 Student 2',
-      name: 'Priya Sundaram',
-      email: 'priya@livecode.edu',
-      pass: 'StudentPass123!',
-      desc: 'Roll No: 24CSE042 • Section A • Currently leading Rank 1.'
-    },
-    {
-      role: 'student',
-      label: '🧑‍💻 Student 3',
-      name: 'Kavin Raj',
-      email: 'kavin@livecode.edu',
-      pass: 'StudentPass123!',
-      desc: 'Roll No: 24CSE089 • Section B • Pending evaluation ready for review.'
-    }
-  ];
+  /* ------------------------------------------------------------- */
+  /* LOADING STATE: Smooth branded loader during token verification */
+  /* (Prevents flash of login screen during browser refresh!)       */
+  /* ------------------------------------------------------------- */
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-cyan-500 p-[1.5px] shadow-xl shadow-violet-500/20 animate-pulse mb-4">
+          <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+            <Trophy className="w-7 h-7 text-violet-600" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm font-bold text-slate-800">
+          <div className="w-2.5 h-2.5 rounded-full bg-violet-600 animate-ping" />
+          <span>Resuming your contest session...</span>
+        </div>
+        <p className="text-xs text-slate-400 mt-1.5 font-medium">COMPILER CLASH : Battle of Bug</p>
+      </main>
+    );
+  }
 
   /* ------------------------------------------------------------- */
-  /* UN-AUTHENTICATED: LIGHT THEME LANDING & LOGIN PAGE            */
+  /* UN-AUTHENTICATED: OFFICIAL SECE CONTEST SIGN IN               */
   /* (Leaderboard is strictly hidden until logged in!)             */
   /* ------------------------------------------------------------- */
   if (!user) {
     return (
       <main className="min-h-screen flex flex-col justify-between p-4 sm:p-8 bg-[#f8fafc]">
-        <div className="max-w-6xl mx-auto w-full pt-8 pb-12">
+        <div className="max-w-4xl mx-auto w-full pt-8 pb-12">
           
           {/* Hero Header */}
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 text-xs font-bold mb-4 shadow-sm">
+          <div className="text-center max-w-2xl mx-auto mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 text-xs font-bold mb-3 shadow-sm">
               <Sparkles className="w-4 h-4 text-violet-600" />
-              Department of Computer Science & Engineering
+              Sri Eshwar College of Engineering • Dept. of CCE
             </div>
-            <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 leading-tight">
-              Live Coding Challenge &{' '}
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+              COMPILER CLASH :{' '}
               <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-                Runtime Assessment
+                Battle of Bug
               </span>
             </h1>
-            <p className="text-slate-600 text-sm sm:text-base mt-4 max-w-2xl mx-auto leading-relaxed">
-              First-year engineering programming evaluation. Solve challenges, upload code screenshots, receive instant faculty evaluations, and unlock the live real-time leaderboard after logging in.
+            <p className="text-slate-600 text-xs sm:text-sm mt-3 leading-relaxed">
+              Academic Year: 2026-2027 [ODD SEM] • Live Code Evaluation & Real-Time Leaderboard Platform
             </p>
 
             <div className="inline-flex items-center gap-2 mt-4 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs text-slate-600 font-semibold">
               <Lock className="w-3.5 h-3.5 text-slate-500" />
-              Leaderboard is protected: Sign in to view live rankings
-            </div>
-          </div>
-
-          {/* Quick Demo One-Click Login Cards */}
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                Select a Pre-Configured Demo Account (1-Click Instant Login)
-              </h2>
-              <span className="text-xs text-slate-400 font-medium hidden sm:inline">Click any card to log in directly</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {demoCards.map((card, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => switchAccount(card.email, card.pass)}
-                  className="bg-white rounded-3xl p-5 cursor-pointer border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-violet-300 transition-all flex flex-col justify-between group"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-bold text-slate-700">{card.label}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        card.role === 'admin'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : 'bg-violet-100 text-violet-800 border border-violet-200'
-                      }`}>
-                        {card.role.toUpperCase()}
-                      </span>
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900 group-hover:text-violet-600 transition-colors">
-                      {card.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed font-normal">
-                      {card.desc}
-                    </p>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-violet-600 group-hover:text-indigo-600 transition-colors">
-                    <span>Log in as this user</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              ))}
+              Live Leaderboard is protected: Sign in to view rankings & submit solutions
             </div>
           </div>
 
@@ -307,7 +366,7 @@ export default function Home() {
                   required
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="e.g. admin@livecode.edu or arun@livecode.edu"
+                  placeholder="e.g. anandaraj.a@sece.ac.in or naveen.m2026cse@sece.ac.in"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-600 focus:bg-white transition-all"
                 />
               </div>
@@ -324,6 +383,13 @@ export default function Home() {
                 />
               </div>
 
+              <div className="p-3.5 rounded-2xl bg-violet-50/80 border border-violet-200/80 text-xs text-violet-800 flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-violet-600 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  <span className="font-bold">SECE Contest Sign In:</span> Enter your official college email address as both username and password.
+                </p>
+              </div>
+
               {loginError && (
                 <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium">
                   {loginError}
@@ -333,9 +399,9 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full py-3 rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-sm font-bold text-white shadow-md shadow-violet-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-sm font-bold text-white shadow-md shadow-violet-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
               >
-                {loginLoading ? 'Signing in...' : 'Sign In & Unlock Leaderboard'}
+                {loginLoading ? 'Signing in...' : 'Sign In & Enter Contest'}
               </button>
             </form>
           </div>
@@ -343,7 +409,7 @@ export default function Home() {
         </div>
 
         <footer className="text-center text-xs text-slate-400 py-4 border-t border-slate-200 font-medium">
-          LiveCode Assessment Platform © 2026 • Light Theme • Real-time Socket.IO & MongoDB
+          COMPILER CLASH : Battle of Bug © 2026 • Sri Eshwar College of Engineering • Dept. of CCE
         </footer>
       </main>
     );
@@ -354,21 +420,20 @@ export default function Home() {
   /* ------------------------------------------------------------- */
   if (user.role === 'student') {
     return (
-      <div className="min-h-screen bg-[#f8fafc]">
-        <div className="max-w-[1560px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-6 items-start">
-          
-          {/* Oval Shape Navigation Sidebar */}
-          <OvalSidebar
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            assessmentTitle={assessmentInfo?.title || '1st Year Algorithmic Sprint 2026'}
-            assessmentStatus={assessmentInfo?.status || 'LIVE'}
-            completedQuestions={studentStats?.completedQuestions ?? 1}
-            totalQuestions={studentStats?.totalQuestions ?? 5}
-          />
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col lg:flex-row p-4 sm:p-6 gap-6 items-start">
+        {/* Full Top-to-Bottom Oval Navigation Sidebar */}
+        <OvalSidebar
+          activeTab={activeTab}
+          setActiveTab={navigateTab}
+          assessmentTitle={assessmentInfo?.title || 'COMPILER CLASH : Battle of Bug'}
+          assessmentStatus={assessmentInfo?.status || 'LIVE'}
+          completedQuestions={studentStats?.completedQuestions ?? 0}
+          totalQuestions={studentStats?.totalQuestions ?? 6}
+        />
 
-          {/* Main Content Area */}
-          <main className="flex-1 w-full min-w-0 space-y-6">
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0 flex flex-col w-full">
+          <main className="flex-1 w-full max-w-[1560px] space-y-6">
             
             {/* Student Welcome & Symmetrical Metrics Banner */}
             <div className="bg-white rounded-[32px] p-6 sm:p-7 border border-slate-200/90 shadow-sm relative overflow-hidden">
@@ -381,7 +446,7 @@ export default function Home() {
                     Welcome, {user.name} 👋
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
-                    Roll No: <span className="text-slate-900 font-semibold">{user.studentId}</span> • {user.department} • Section {user.section}
+                    {user.department} • Section {user.section || 'C'}
                   </p>
                 </div>
 
@@ -395,7 +460,7 @@ export default function Home() {
                       <span className="text-2xl sm:text-3xl font-black text-slate-900">
                         {studentStats?.totalMarks ?? 0}
                       </span>
-                      <span className="text-xs text-slate-400 font-bold">/{studentStats?.maxPossibleMarks ?? 50}</span>
+                      <span className="text-xs text-slate-400 font-bold">/{studentStats?.maxPossibleMarks ?? 85}</span>
                     </div>
                   </div>
 
@@ -419,7 +484,7 @@ export default function Home() {
                       <span className="text-2xl sm:text-3xl font-black text-violet-700">
                         {studentStats?.completedQuestions ?? 0}
                       </span>
-                      <span className="text-xs text-slate-400 font-bold">/{studentStats?.totalQuestions ?? 5}</span>
+                      <span className="text-xs text-slate-400 font-bold">/{studentStats?.totalQuestions ?? 6}</span>
                     </div>
                   </div>
                 </div>
@@ -443,7 +508,7 @@ export default function Home() {
                   {assignedQuestions.map((q, idx) => (
                     <div
                       key={q.questionId || idx}
-                      onClick={() => setSelectedQuestionId(q.questionId)}
+                      onClick={() => openQuestion(q.questionId)}
                       className="bg-white rounded-[28px] p-5 cursor-pointer border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-violet-300 transition-all flex flex-col justify-between group h-full min-h-[200px]"
                     >
                       <div>
@@ -468,7 +533,7 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* Title */}
+                        {/* Title & category */}
                         <h4 className="text-base font-bold text-slate-900 group-hover:text-violet-600 transition-colors">
                           {q.title}
                         </h4>
@@ -497,38 +562,6 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
-
-                  {/* 6th Slot: Helpful Submission Protocol Card to make the grid completely symmetrical! */}
-                  <div className="bg-gradient-to-br from-violet-50/70 via-white to-indigo-50/50 rounded-[28px] p-5 border border-dashed border-violet-200 shadow-sm flex flex-col justify-between h-full min-h-[200px]">
-                    <div>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 uppercase tracking-wider">
-                          Protocol
-                        </span>
-                        <BookOpen className="w-4 h-4 text-violet-600" />
-                      </div>
-                      <h4 className="text-base font-bold text-slate-900">Submission Workflow</h4>
-                      <ul className="text-xs text-slate-600 mt-2 space-y-1.5 font-medium">
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-                          Code solution in your preferred IDE
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-                          Capture code & test execution output
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-                          Upload screenshot for instant review
-                        </li>
-                      </ul>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-violet-100 flex items-center justify-between text-xs font-bold text-violet-700">
-                      <span>Live Scoring Active</span>
-                      <CheckCircle className="w-4 h-4 text-emerald-500" />
-                    </div>
-                  </div>
-
                 </div>
               </div>
             )}
@@ -549,7 +582,7 @@ export default function Home() {
           <QuestionDetailModal
             questionId={selectedQuestionId}
             assessmentId={assessmentInfo?.id || ''}
-            onClose={() => setSelectedQuestionId(null)}
+            onClose={closeQuestion}
             onSubmitted={() => {
               fetchStudentDashboard();
               fetchLeaderboard();
@@ -564,20 +597,19 @@ export default function Home() {
   /* AUTHENTICATED: ADMIN / FACULTY PORTAL (With Oval Sidebar)     */
   /* ------------------------------------------------------------- */
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <div className="max-w-[1560px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-6 items-start">
-        
-        {/* Oval Shape Navigation Sidebar */}
-        <OvalSidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          pendingCount={adminStats?.pendingEvaluations ?? 0}
-          assessmentTitle={adminStats?.assessmentTitle || '1st Year Algorithmic Sprint 2026'}
-          assessmentStatus={adminStats?.assessmentStatus || 'LIVE'}
-        />
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col lg:flex-row p-4 sm:p-6 gap-6 items-start">
+      {/* Full Top-to-Bottom Oval Navigation Sidebar */}
+      <OvalSidebar
+        activeTab={activeTab}
+        setActiveTab={navigateTab}
+        pendingCount={adminStats?.pendingEvaluations ?? 0}
+        assessmentTitle={adminStats?.assessmentTitle || 'COMPILER CLASH : Battle of Bug'}
+        assessmentStatus={adminStats?.assessmentStatus || 'LIVE'}
+      />
 
-        {/* Main Content Area */}
-        <main className="flex-1 w-full min-w-0 space-y-6">
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0 flex flex-col w-full">
+        <main className="flex-1 w-full max-w-[1560px] space-y-6">
           
           {/* Admin Header with KPI Cards */}
           <div className="bg-white rounded-[32px] p-6 sm:p-7 border border-slate-200/90 shadow-sm">
@@ -598,13 +630,13 @@ export default function Home() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setShowQuestionModal(true)}
-                  className="px-4 py-2.5 rounded-full bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white shadow-md shadow-violet-600/20 flex items-center gap-1.5 transition-all"
+                  className="px-4 py-2.5 rounded-full bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white shadow-md shadow-violet-600/20 flex items-center gap-1.5 transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Add Problem
                 </button>
                 <button
                   onClick={() => setShowAuditModal(true)}
-                  className="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 border border-slate-200 flex items-center gap-1.5 transition-all"
+                  className="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer"
                 >
                   <History className="w-4 h-4 text-violet-600" /> Audit Log
                 </button>
@@ -615,7 +647,7 @@ export default function Home() {
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-6">
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-center">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Total Students</span>
-                <span className="text-2xl font-black text-slate-900 mt-1 block">{adminStats?.totalStudents ?? 3}</span>
+                <span className="text-2xl font-black text-slate-900 mt-1 block">{adminStats?.totalStudents ?? 67}</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-center">
@@ -653,8 +685,8 @@ export default function Home() {
                   {(['PENDING', 'ALL', 'EVALUATED'] as const).map((filter) => (
                     <button
                       key={filter}
-                      onClick={() => setSubFilter(filter)}
-                      className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${
+                      onClick={() => changeSubFilter(filter)}
+                      className={`px-4 py-2 rounded-full text-xs font-bold transition-colors cursor-pointer ${
                         subFilter === filter
                           ? 'bg-slate-900 text-white shadow-sm'
                           : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -686,7 +718,7 @@ export default function Home() {
                     return (
                       <div
                         key={sub.id}
-                        onClick={() => setSelectedSubmission(sub)}
+                        onClick={() => openSubmission(sub)}
                         className="bg-white rounded-[28px] p-5 cursor-pointer border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-violet-300 transition-all flex flex-col justify-between group h-full min-h-[240px]"
                       >
                         <div>
@@ -698,7 +730,7 @@ export default function Home() {
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-slate-900">{sub.student?.name}</p>
-                                <p className="text-[10px] text-slate-500 font-medium">{sub.student?.studentId}</p>
+                                <p className="text-[10px] text-slate-500 font-medium">{sub.student?.email || 'Section C'}</p>
                               </div>
                             </div>
 
@@ -724,69 +756,76 @@ export default function Home() {
                               </span>
                             </div>
                           </div>
-
-                          <p className="text-xs text-slate-500 font-medium">
-                            Max Marks: <span className="font-bold text-slate-800">{sub.question?.marks}</span> • {sub.question?.category}
-                          </p>
                         </div>
 
-                        {/* Marks or Action */}
-                        <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
-                          {sub.isEvaluated ? (
-                            <span className="text-xs font-bold text-emerald-700">
-                              Awarded: {sub.evaluation?.marksObtained} / {sub.question?.marks} pts
-                            </span>
-                          ) : (
-                            <span className="text-xs font-bold text-rose-600 flex items-center gap-1">
-                              <Flame className="w-3.5 h-3.5" /> Award Marks
-                            </span>
-                          )}
-
-                          <span className="text-xs font-bold text-violet-600 group-hover:text-indigo-600">
-                            {sub.isEvaluated ? 'Edit Marks ↗' : 'Evaluate ↗'}
+                        {/* Card bottom: status & action */}
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            Submitted {new Date(sub.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
+
+                          <button className="px-3 py-1.5 rounded-xl bg-violet-50 text-violet-700 group-hover:bg-violet-600 group-hover:text-white transition-all text-xs font-bold flex items-center gap-1">
+                            {sub.isEvaluated ? 'Edit Marks' : 'Evaluate'} <ArrowRight className="w-3 h-3" />
+                          </button>
                         </div>
                       </div>
                     );
                   })}
               </div>
 
+              {submissions.filter((s) => {
+                if (subFilter === 'PENDING') return !s.isEvaluated;
+                if (subFilter === 'EVALUATED') return s.isEvaluated;
+                return true;
+              }).length === 0 && (
+                <div className="bg-white rounded-[28px] p-12 text-center border border-slate-200/90 shadow-sm">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-3">
+                    <CheckCircle className="w-6 h-6 text-emerald-500" />
+                  </div>
+                  <h4 className="text-base font-bold text-slate-800">No submissions found</h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                    {subFilter === 'PENDING'
+                      ? 'All caught up! No pending submissions to evaluate.'
+                      : 'No submissions found under this filter.'}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
-          {/* TAB 2: Leaderboard Projection View (Visible after login!) */}
+          {/* TAB 2: Live Leaderboard Monitor */}
           {activeTab === 'leaderboard' && (
             <LeaderboardTable
               entries={leaderboard}
-              isProjectorMode={true}
+              isProjectorMode={false}
             />
           )}
 
-          {/* TAB 3: Question Bank Management */}
+          {/* TAB 3: Question Bank Manager */}
           {activeTab === 'bank' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">
-                  Active Assessment Question Bank ({questionsBank.length} Questions)
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-violet-600" /> Question Repository ({questionsBank.length} Problems)
                 </h3>
                 <button
                   onClick={() => setShowQuestionModal(true)}
-                  className="px-4 py-2 rounded-full bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white flex items-center gap-1 shadow-md shadow-violet-600/20"
+                  className="px-3.5 py-1.5 rounded-full bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" /> New Problem
+                  <Plus className="w-3.5 h-3.5" /> Add New
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 {questionsBank.map((q) => (
                   <div key={q._id} className="bg-white rounded-[28px] p-5 border border-slate-200/90 shadow-sm">
                     <div className="flex items-center justify-between mb-2">
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
                         q.difficulty === 'easy'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          ? 'bg-emerald-100 text-emerald-800'
                           : q.difficulty === 'medium'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : 'bg-rose-100 text-rose-800 border border-rose-200'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-rose-100 text-rose-800'
                       }`}>
                         {q.difficulty}
                       </span>
@@ -811,7 +850,7 @@ export default function Home() {
       {selectedSubmission && (
         <EvaluationModal
           submission={selectedSubmission}
-          onClose={() => setSelectedSubmission(null)}
+          onClose={closeSubmission}
           onEvaluated={() => {
             fetchSubmissions();
             fetchAdminDashboard();
@@ -837,5 +876,25 @@ export default function Home() {
       )}
 
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-cyan-500 p-[1.5px] shadow-xl shadow-violet-500/20 animate-pulse mb-4">
+          <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+            <Trophy className="w-7 h-7 text-violet-600" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm font-bold text-slate-800">
+          <div className="w-2.5 h-2.5 rounded-full bg-violet-600 animate-ping" />
+          <span>Loading live arena...</span>
+        </div>
+      </main>
+    }>
+      <ArenaPageContent />
+    </Suspense>
   );
 }

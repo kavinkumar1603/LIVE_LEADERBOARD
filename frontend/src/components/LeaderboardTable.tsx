@@ -22,7 +22,6 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
   const filtered = entries.filter(
     (e) =>
       e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.rollNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       e.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -40,34 +39,37 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
     }
   }, [entries, currentStudentId]);
 
-  const getRankBadge = (rank: number) => {
-    if (rank === 1) {
+  const getRankBadge = (entry: LeaderboardEntry, index: number) => {
+    // Only the top 3 positions receive gold, silver, and bronze badges
+    if (index === 0) {
       return (
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 font-extrabold text-xs shadow-sm">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 font-extrabold text-xs shadow-sm">
           <span>🥇</span>
           <span>1st</span>
         </div>
       );
     }
-    if (rank === 2) {
+    if (index === 1) {
       return (
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-300 font-extrabold text-xs shadow-sm">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-300 font-extrabold text-xs shadow-sm">
           <span>🥈</span>
           <span>2nd</span>
         </div>
       );
     }
-    if (rank === 3) {
+    if (index === 2) {
       return (
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-800 border border-orange-300 font-extrabold text-xs shadow-sm">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-800 border border-orange-300 font-extrabold text-xs shadow-sm">
           <span>🥉</span>
           <span>3rd</span>
         </div>
       );
     }
+
+    // For ALL remaining members (Position 4 and onwards), show their sequential serial number
     return (
-      <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-600">
-        #{rank}
+      <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/80 flex items-center justify-center font-bold text-xs text-slate-600 font-mono">
+        {index + 1}
       </div>
     );
   };
@@ -99,7 +101,7 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search student or roll no..."
+              placeholder="Search student by name..."
               className="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
             />
           </div>
@@ -111,7 +113,7 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              <th className="py-3 px-4">Rank</th>
+              <th className="py-3 px-4">Rank / S.No</th>
               <th className="py-3 px-4">Student</th>
               <th className="py-3 px-4">Questions Solved</th>
               <th className="py-3 px-4">Score</th>
@@ -127,8 +129,9 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
                 </td>
               </tr>
             ) : (
-              filtered.map((entry) => {
+              filtered.map((entry, index) => {
                 const isMe = currentStudentId && entry.studentId === currentStudentId;
+
                 return (
                   <tr
                     key={entry.studentId}
@@ -138,17 +141,21 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
                         : 'hover:bg-slate-50/80'
                     }`}
                   >
-                    {/* Rank */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      {getRankBadge(entry.rank)}
+                    {/* Rank / Serial Number */}
+                    <td className="py-4 px-4 whitespace-nowrap min-w-[70px]">
+                      {getRankBadge(entry, index)}
                     </td>
 
                     {/* Student Info */}
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs ${
-                          entry.rank === 1
+                          index === 0
                             ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : index === 1
+                            ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                            : index === 2
+                            ? 'bg-orange-100 text-orange-800 border border-orange-200'
                             : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}>
                           {entry.name.charAt(0)}
@@ -165,7 +172,7 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
                             )}
                           </div>
                           <p className="text-xs text-slate-500 font-medium">
-                            {entry.rollNumber} • {entry.department} (Sec {entry.section})
+                            {entry.department} • Section {entry.section || 'C'}
                           </p>
                         </div>
                       </div>
