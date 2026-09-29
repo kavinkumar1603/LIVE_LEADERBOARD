@@ -178,7 +178,7 @@ export const QuestionBankModal: React.FC<QuestionBankModalProps> = ({
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 py-2.5 rounded-full bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white shadow-md shadow-violet-600/20 flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-xs font-bold text-white shadow-md shadow-violet-600/20 transition-all flex items-center justify-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> Add to Question Pool
             </button>

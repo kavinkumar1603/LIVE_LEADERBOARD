@@ -2,7 +2,22 @@
 
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../lib/api';
-import { X, UploadCloud, CheckCircle, FileImage, Check, AlertCircle, Sparkles, Copy, Terminal } from 'lucide-react';
+import { 
+  X, 
+  UploadCloud, 
+  CheckCircle, 
+  FileImage, 
+  Check, 
+  AlertCircle, 
+  Sparkles, 
+  Copy, 
+  Terminal, 
+  Award, 
+  Clock, 
+  ArrowRight,
+  RefreshCw,
+  Eye
+} from 'lucide-react';
 
 // Code Snippet Block with Mac Header, Line Numbers, Syntax Styling & Copy Button
 const CodeSnippetBlock: React.FC<{ code: string; lang?: string }> = ({ code, lang = 'cpp' }) => {
@@ -49,14 +64,14 @@ const CodeSnippetBlock: React.FC<{ code: string; lang?: string }> = ({ code, lan
   const fileExt = lang?.toLowerCase() === 'python' ? 'py' : lang?.toLowerCase() === 'java' ? 'java' : 'cpp';
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-slate-800 bg-[#0f172a] shadow-xl my-3 text-left font-mono">
+    <div className="rounded-2xl overflow-hidden border border-slate-800 bg-[#0f172a] shadow-lg my-3 text-left font-mono">
       {/* Editor Header Bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#1e293b] border-b border-slate-800">
+      <div className="flex items-center justify-between px-4 py-2 bg-[#1e293b] border-b border-slate-800">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-[#ff5f56] inline-block shadow-sm" />
-            <span className="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block shadow-sm" />
-            <span className="w-3 h-3 rounded-full bg-[#27c93f] inline-block shadow-sm" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56] inline-block shadow-sm" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] inline-block shadow-sm" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f] inline-block shadow-sm" />
           </div>
           <span className="text-slate-400 text-xs font-mono font-medium ml-1.5 flex items-center gap-1.5">
             <Terminal className="w-3.5 h-3.5 text-violet-400" />
@@ -80,7 +95,7 @@ const CodeSnippetBlock: React.FC<{ code: string; lang?: string }> = ({ code, lan
             ) : (
               <>
                 <Copy className="w-3 h-3 text-slate-400" />
-                <span>Copy Code</span>
+                <span>Copy</span>
               </>
             )}
           </button>
@@ -88,12 +103,12 @@ const CodeSnippetBlock: React.FC<{ code: string; lang?: string }> = ({ code, lan
       </div>
 
       {/* Editor Code Table with Gutter Numbers */}
-      <div className="p-4 overflow-x-auto text-[13px] leading-relaxed">
+      <div className="p-3.5 overflow-x-auto text-xs sm:text-[13px] leading-relaxed">
         <table className="w-full border-collapse">
           <tbody>
             {lines.map((line, idx) => (
               <tr key={idx} className="hover:bg-slate-800/40 transition-colors">
-                <td className="w-8 select-none pr-4 text-right text-slate-600 text-xs font-mono align-top py-0.5">
+                <td className="w-8 select-none pr-3 text-right text-slate-600 text-xs font-mono align-top py-0.5">
                   {idx + 1}
                 </td>
                 <td className="whitespace-pre font-mono text-slate-100 align-top py-0.5 pl-2 border-l border-slate-800/80">
@@ -153,28 +168,29 @@ const FormattedDescription: React.FC<{ description: string }> = ({ description }
             {paragraphs.map((p, paraIdx) => {
               const lines = p.split('\n').filter(Boolean);
               return (
-                <div key={paraIdx} className="text-sm text-slate-800 leading-relaxed font-medium">
+                <div key={paraIdx} className="text-xs sm:text-sm text-slate-700 leading-relaxed font-normal">
                   {lines.map((line, lIdx) => {
                     const trimmed = line.trim();
                     const isBoldHeader = trimmed.startsWith('**') && trimmed.endsWith('**');
                     if (isBoldHeader) {
                       return (
-                        <h5 key={lIdx} className="text-xs font-bold text-slate-700 uppercase tracking-wider mt-3 mb-1">
+                        <h5 key={lIdx} className="text-xs font-bold text-slate-900 uppercase tracking-wider mt-3 mb-1.5 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-600" />
                           {trimmed.replace(/\*\*/g, '')}
                         </h5>
                       );
                     }
                     if (/^\d+\.\s/.test(trimmed)) {
                       return (
-                        <div key={lIdx} className="flex items-start gap-2 pl-1 py-0.5 text-slate-700">
-                          <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        <div key={lIdx} className="flex items-start gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-200/70 my-1 text-slate-800">
+                          <span className="w-5 h-5 rounded-lg bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                             {trimmed.match(/^(\d+)\./)?.[1]}
                           </span>
-                          <span className="text-sm font-medium">{trimmed.replace(/^\d+\.\s*/, '')}</span>
+                          <span className="text-xs sm:text-sm font-medium leading-snug">{trimmed.replace(/^\d+\.\s*/, '')}</span>
                         </div>
                       );
                     }
-                    return <p key={lIdx} className="text-slate-800">{line}</p>;
+                    return <p key={lIdx} className="text-slate-700 leading-relaxed">{line}</p>;
                   })}
                 </div>
               );
@@ -313,7 +329,7 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
         onSubmitted();
         setTimeout(() => {
           onClose();
-        }, 1300);
+        }, 1200);
       } else {
         setErrorMsg(res.message || 'Submission failed');
       }
@@ -332,269 +348,342 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
     : null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-white rounded-[36px] border border-slate-200 overflow-hidden shadow-2xl my-6">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 lg:p-6 overflow-y-auto animate-in fade-in duration-200">
+      <div className="relative w-full max-w-5xl bg-white rounded-[28px] sm:rounded-[32px] border border-slate-200/90 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 sm:px-8 py-5 border-b border-slate-100 bg-slate-50/70">
-          <div>
-            <div className="flex items-center gap-2">
+        {/* Header Toolbar */}
+        <div className="flex items-center justify-between px-6 sm:px-8 py-4 border-b border-slate-200/80 bg-white shrink-0">
+          <div className="min-w-0 pr-4">
+            <div className="flex flex-wrap items-center gap-2">
               <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
                 data?.question?.difficulty === 'easy'
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   : data?.question?.difficulty === 'medium'
-                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                  : 'bg-rose-100 text-rose-800 border border-rose-200'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                  : 'bg-rose-50 text-rose-700 border border-rose-200'
               }`}>
                 {data?.question?.difficulty || 'easy'}
               </span>
-              <span className="text-xs text-slate-500 font-medium">• {data?.question?.category}</span>
-              {data?.evaluation && (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  {data.evaluation.marksObtained}/{data.evaluation.maximumMarks} Marks
+
+              {data?.question?.category && (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                  {data.question.category}
+                </span>
+              )}
+
+              {data?.question?.marks && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-violet-50 text-violet-700 border border-violet-200">
+                  <Award className="w-3 h-3 text-violet-600" />
+                  {data.question.marks} Marks
+                </span>
+              )}
+
+              {/* Status Indicator */}
+              {data?.evaluation ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  <CheckCircle className="w-3 h-3 text-emerald-600" />
+                  Evaluated: {data.evaluation.marksObtained}/{data.evaluation.maximumMarks} Marks
+                </span>
+              ) : data?.submission ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-800 border border-sky-200">
+                  <Clock className="w-3 h-3 text-sky-600" />
+                  Submitted • Pending Review
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                  Not Submitted
                 </span>
               )}
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1.5">
-              {loading ? 'Loading Problem...' : data?.question?.title}
-            </h3>
+
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 truncate">
+              {loading ? 'Loading Problem Specification...' : data?.question?.title}
+            </h2>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
+        {/* Content Body: Split Grid */}
         {loading ? (
-          <div className="p-16 text-center text-slate-500 font-medium">Loading problem specification...</div>
+          <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-500 font-medium">
+            <div className="w-8 h-8 border-3 border-violet-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm">Loading problem specification & test cases...</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 sm:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80">
             
-            {/* Left Column: Problem Details (7 cols) */}
-            <div className="lg:col-span-7 flex flex-col gap-4 overflow-y-auto max-h-[72vh] pr-2">
+            {/* Left Column: Problem Details (7 cols, smooth scroll) */}
+            <div className="lg:col-span-7 p-6 sm:p-7 overflow-y-auto space-y-5 max-h-[75vh]">
               <div>
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Problem Description & Code Snippet
-                </h4>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Terminal className="w-3.5 h-3.5 text-slate-400" />
+                  Problem Specification & Code
+                </h3>
                 <FormattedDescription description={data?.question?.description || ''} />
               </div>
 
-              {data?.question?.inputFormat && (
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Input Format
-                  </h5>
-                  <p className="text-xs text-slate-700 font-mono whitespace-pre-line">
-                    {data?.question?.inputFormat}
-                  </p>
-                </div>
-              )}
-
-              {data?.question?.outputFormat && (
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Output Format
-                  </h5>
-                  <p className="text-xs text-slate-700 font-mono whitespace-pre-line">
-                    {data?.question?.outputFormat}
-                  </p>
-                </div>
-              )}
-
-              {data?.question?.constraints && (
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Constraints
-                  </h5>
-                  <p className="text-xs text-slate-600 font-mono whitespace-pre-line">
-                    {data?.question?.constraints}
-                  </p>
-                </div>
-              )}
-
-              {/* Sample Input & Sample Output: Stacked one-by-one with light color styling & no horizontal scrolling */}
-              <div className="space-y-3 pt-1">
-                {data?.question?.sampleInput && (
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-sm">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-slate-200/70 text-slate-700">
-                        Sample Input
-                      </span>
+              {/* Formats Grid */}
+              {(data?.question?.inputFormat || data?.question?.outputFormat || data?.question?.constraints) && (
+                <div className="space-y-3 pt-2">
+                  {data?.question?.inputFormat && (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                      <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Input Format
+                      </h4>
+                      <p className="text-xs text-slate-700 font-mono whitespace-pre-line leading-relaxed">
+                        {data?.question?.inputFormat}
+                      </p>
                     </div>
-                    <pre className="text-xs sm:text-[13px] text-slate-800 font-mono font-medium whitespace-pre-wrap break-words leading-relaxed overflow-x-hidden">
-                      {data.question.sampleInput}
-                    </pre>
-                  </div>
-                )}
+                  )}
 
-                {data?.question?.sampleOutput && (
-                  <div className="p-4 rounded-2xl bg-violet-50/60 border border-violet-200/80 shadow-sm">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-violet-200/70 text-violet-800">
-                        Sample Output
-                      </span>
+                  {data?.question?.outputFormat && (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                      <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Output Format
+                      </h4>
+                      <p className="text-xs text-slate-700 font-mono whitespace-pre-line leading-relaxed">
+                        {data?.question?.outputFormat}
+                      </p>
                     </div>
-                    <pre className="text-xs sm:text-[13px] text-slate-900 font-mono font-medium whitespace-pre-wrap break-words leading-relaxed overflow-x-hidden">
-                      {data.question.sampleOutput}
-                    </pre>
-                  </div>
-                )}
-              </div>
+                  )}
+
+                  {data?.question?.constraints && (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                      <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Constraints
+                      </h4>
+                      <p className="text-xs text-slate-600 font-mono whitespace-pre-line leading-relaxed">
+                        {data?.question?.constraints}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Sample Test Cases */}
+              {(data?.question?.sampleInput || data?.question?.sampleOutput) && (
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 text-slate-400" />
+                    Sample Test Cases
+                  </h3>
+
+                  {data?.question?.sampleInput && (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-2xs">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200/70 text-slate-700">
+                          Sample Input
+                        </span>
+                      </div>
+                      <pre className="text-xs text-slate-800 font-mono font-medium whitespace-pre-wrap break-words leading-relaxed">
+                        {data.question.sampleInput}
+                      </pre>
+                    </div>
+                  )}
+
+                  {data?.question?.sampleOutput && (
+                    <div className="p-3.5 rounded-2xl bg-violet-50/50 border border-violet-200/80 shadow-2xs">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-violet-200/70 text-violet-800">
+                          Sample Output
+                        </span>
+                      </div>
+                      <pre className="text-xs text-slate-900 font-mono font-medium whitespace-pre-wrap break-words leading-relaxed">
+                        {data.question.sampleOutput}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Right Column: Screenshot Upload & Evaluation (5 cols) */}
-            <div className="lg:col-span-5 flex flex-col justify-between bg-slate-50/80 rounded-3xl p-5 sm:p-6 border border-slate-200">
+            {/* Right Column: Output Verification & Submission Terminal (5 cols) */}
+            <div className="lg:col-span-5 p-6 sm:p-7 bg-[#f8fafc] flex flex-col justify-between overflow-y-auto max-h-[75vh] space-y-5">
               
               <div className="space-y-4">
-                {/* Only after mark awarded, mark comes */}
+                {/* Faculty Evaluation Result Banner (When graded) */}
                 {data?.evaluation && (
-                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/80 shadow-sm flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
-                      <CheckCircle className="w-4 h-4 text-emerald-600" /> Mark Awarded
-                    </span>
-                    <span className="text-base font-black text-slate-900">
-                      {data.evaluation.marksObtained} / {data.evaluation.maximumMarks} Marks
-                    </span>
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold flex items-center gap-1.5 text-emerald-800">
+                        <CheckCircle className="w-4 h-4 text-emerald-600" />
+                        Evaluation Published
+                      </span>
+                      <span className="text-base font-black text-emerald-900">
+                        {data.evaluation.marksObtained} / {data.evaluation.maximumMarks} Marks
+                      </span>
+                    </div>
+                    {data.evaluation.remarks && (
+                      <p className="text-xs text-emerald-800 mt-2 pt-2 border-t border-emerald-200/60 leading-relaxed">
+                        <span className="font-bold">Faculty Remarks:</span> {data.evaluation.remarks}
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {/* Space for Upload a Screenshot */}
+                {/* Section Header */}
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center justify-between">
                     <span className="flex items-center gap-2">
                       <UploadCloud className="w-4 h-4 text-violet-600" />
-                      {data?.evaluation ? 'Uploaded Screenshot' : 'Upload Output Screenshot'}
+                      {data?.evaluation ? 'Submitted Output Screenshot' : 'Output Screenshot Verification'}
                     </span>
                     {!data?.evaluation && (
                       <span className="text-[11px] font-semibold text-slate-400">PNG, JPG, WEBP (Max 15MB)</span>
                     )}
-                  </h4>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {data?.evaluation 
+                      ? 'Official screenshot verified and evaluated by faculty.' 
+                      : 'Capture your terminal or compiler output and upload as evidence.'}
+                  </p>
+                </div>
 
-                  {/* Hidden File Input */}
-                  {!data?.evaluation && (
-                    <input
-                      id="screenshot-file-input"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  )}
+                {/* Hidden File Input */}
+                {!data?.evaluation && (
+                  <input
+                    id="screenshot-file-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                )}
 
-                  {/* File Dropzone & Image Preview */}
-                  <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-3xl p-4 text-center transition-all shadow-sm ${
-                      isDragging
-                        ? 'border-violet-600 bg-violet-50/70 ring-4 ring-violet-500/20'
-                        : 'border-slate-300 hover:border-violet-500 bg-white'
-                    }`}
-                  >
-                    {previewUrl ? (
-                      <div className="space-y-3 py-1">
+                {/* Dropzone & Preview Container */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-2xl p-5 text-center transition-all bg-white shadow-xs ${
+                    isDragging
+                      ? 'border-violet-600 bg-violet-50/60 ring-4 ring-violet-500/10'
+                      : 'border-slate-300 hover:border-violet-500'
+                  }`}
+                >
+                  {previewUrl ? (
+                    <div className="space-y-3">
+                      <div className="relative group overflow-hidden rounded-xl border border-slate-200 bg-slate-900">
                         <img
                           src={previewUrl}
                           alt="Screenshot Preview"
-                          className="max-h-52 mx-auto rounded-2xl border border-slate-200 object-contain shadow-sm"
+                          className="max-h-56 w-full object-contain mx-auto"
                         />
-                        {!data?.evaluation && (
-                          <div className="flex flex-col items-center gap-1.5 pt-1">
-                            <span className="text-xs text-violet-700 font-bold flex items-center justify-center gap-1">
-                              <Sparkles className="w-3.5 h-3.5" /> Ready: {selectedFile?.name} ({(selectedFile ? (selectedFile.size / (1024 * 1024)).toFixed(2) : 0)} MB)
-                            </span>
-                            <label
-                              htmlFor="screenshot-file-input"
-                              className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-800 cursor-pointer underline"
-                            >
-                              Choose a different picture
-                            </label>
-                          </div>
-                        )}
                       </div>
-                    ) : existingScreenshot ? (
-                      <div className="space-y-3 py-1">
+
+                      {!data?.evaluation && (
+                        <div className="flex items-center justify-between pt-1 text-xs">
+                          <span className="text-violet-700 font-bold truncate max-w-[200px] flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                            {selectedFile?.name}
+                          </span>
+                          <label
+                            htmlFor="screenshot-file-input"
+                            className="text-violet-600 hover:text-violet-800 font-bold cursor-pointer underline shrink-0"
+                          >
+                            Change picture
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  ) : existingScreenshot ? (
+                    <div className="space-y-3">
+                      <div className="relative group overflow-hidden rounded-xl border border-slate-200 bg-slate-900">
                         <img
                           src={existingScreenshot}
-                          alt="Current Submission"
-                          className="max-h-52 mx-auto rounded-2xl border border-slate-200 object-contain shadow-sm bg-slate-900"
+                          alt="Submitted Screenshot"
+                          className="max-h-56 w-full object-contain mx-auto"
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = 'none';
                           }}
                         />
-                        {!data?.evaluation && (
-                          <div className="pt-2">
-                            <label
-                              htmlFor="screenshot-file-input"
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 cursor-pointer transition-colors"
-                            >
-                              <UploadCloud className="w-3.5 h-3.5" />
-                              Click to replace screenshot
-                            </label>
-                          </div>
-                        )}
                       </div>
-                    ) : (
-                      <label
-                        htmlFor="screenshot-file-input"
-                        className="py-7 flex flex-col items-center justify-center cursor-pointer group"
-                      >
-                        <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-                          <FileImage className="w-6 h-6" />
+
+                      {!data?.evaluation && (
+                        <div className="pt-1">
+                          <label
+                            htmlFor="screenshot-file-input"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 cursor-pointer transition-colors"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Replace with new screenshot
+                          </label>
                         </div>
-                        <p className="text-xs font-bold text-slate-800">
-                          Click to browse or drag & drop screenshot
-                        </p>
-                        <p className="text-[11px] text-slate-400 mt-1 font-medium">
-                          Or paste directly with <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-[10px] text-slate-700 font-bold">Ctrl+V</kbd>
-                        </p>
-                        <span className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm shadow-violet-600/20">
-                          <UploadCloud className="w-3.5 h-3.5" /> Browse Picture
-                        </span>
-                      </label>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="screenshot-file-input"
+                      className="py-6 flex flex-col items-center justify-center cursor-pointer group"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform shadow-xs">
+                        <FileImage className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-800">
+                        Click to upload or drag & drop output screenshot
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1 font-medium">
+                        Supports high-res PNG, JPG, or WEBP
+                      </p>
+                      <div className="mt-3.5 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium">
+                        Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-mono font-bold text-slate-800 shadow-2xs">Ctrl + V</kbd> to paste directly
+                      </div>
+                    </label>
+                  )}
                 </div>
 
                 {/* Notifications */}
                 {errorMsg && (
-                  <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2 font-medium">
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2 font-medium">
                     <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                    {errorMsg}
+                    <span>{errorMsg}</span>
                   </div>
                 )}
 
                 {successMsg && (
-                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2">
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
-                    {successMsg}
+                    <span>{successMsg}</span>
                   </div>
                 )}
               </div>
 
-              {/* Action Submit Button (Only before evaluation) */}
-              {!data?.evaluation && (
-                <div className="pt-4">
+              {/* Bottom Submit Action */}
+              {!data?.evaluation ? (
+                <div className="pt-2">
                   <button
                     type="button"
                     onClick={handleSubmit}
                     disabled={uploading}
-                    className="w-full py-3 px-5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-xs font-bold text-white shadow-md shadow-violet-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                    className="w-full py-3 px-5 rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-xs sm:text-sm font-bold text-white shadow-md shadow-violet-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                   >
                     {uploading ? (
-                      'Uploading Screenshot...'
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Uploading Screenshot to Ledger...</span>
+                      </>
                     ) : (
                       <>
                         <UploadCloud className="w-4 h-4" />
-                        {data?.submission ? 'Update Submission' : 'Submit Screenshot'}
+                        <span>{data?.submission ? 'Update Screenshot Submission' : 'Submit Screenshot Output'}</span>
+                        <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </button>
+                  <p className="text-[11px] text-slate-400 text-center mt-2 font-medium">
+                    Submissions are timestamped and queued for faculty mark evaluation.
+                  </p>
+                </div>
+              ) : (
+                <div className="pt-2 text-center text-xs text-slate-400 font-medium border-t border-slate-200/80">
+                  Evaluation finalized by faculty administrator.
                 </div>
               )}
 
