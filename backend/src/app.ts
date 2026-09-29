@@ -11,7 +11,10 @@ const app: Application = express();
 // Middlewares
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow Vercel deployments (*.vercel.app), localhost, and custom domains
+      callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
