@@ -71,19 +71,6 @@ function ArenaPageContent() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const fillCredentials = (type: 'student' | 'faculty') => {
-    if (type === 'student') {
-      setEmailInput('naveen.m2026cse@sece.ac.in');
-      setPassInput('naveen.m2026cse@sece.ac.in');
-      setActiveLoginTab('student');
-    } else {
-      setEmailInput('anandaraj.a@sece.ac.in');
-      setPassInput('anandaraj.a@sece.ac.in');
-      setActiveLoginTab('faculty');
-    }
-    setLoginError(null);
-  };
-
   // Socket.IO Real-time listeners
   useEffect(() => {
     const socket = getSocket();
@@ -634,32 +621,6 @@ function ArenaPageContent() {
                 )}
               </button>
             </form>
-
-            {/* Quick Demo Credentials for Fast Testing */}
-            <div className="mt-8 pt-6 border-t border-slate-200">
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-3 text-center">
-                Quick Fill Credentials (One-Click)
-              </p>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => fillCredentials('student')}
-                  className="px-3 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-violet-300 hover:bg-violet-50/50 text-[11px] font-semibold text-slate-700 text-center transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="block text-violet-700 font-bold">Student Demo</span>
-                  <span className="text-[10px] text-slate-400 truncate block">Naveen M (26CSE001)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => fillCredentials('faculty')}
-                  className="px-3 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-[11px] font-semibold text-slate-700 text-center transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="block text-indigo-700 font-bold">Faculty Demo</span>
-                  <span className="text-[10px] text-slate-400 truncate block">Anandaraj A (Admin)</span>
-                </button>
-              </div>
-            </div>
 
           </div>
 
