@@ -254,11 +254,11 @@ function ArenaPageContent() {
       if (res.success && res.leaderboard) {
         setLeaderboard(res.leaderboard);
         if (res.assessmentTitle) {
-          setAssessmentInfo({
-            id: 'assessment-active',
+          setAssessmentInfo(prev => ({
+            id: res.assessmentId || prev?.id || '',
             title: res.assessmentTitle,
             status: res.assessmentStatus || 'LIVE'
-          });
+          }));
         }
       }
     } catch (err) {

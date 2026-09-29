@@ -382,6 +382,7 @@ export class AdminController {
       const leaderboard = await ScoreService.getLeaderboard(assessment._id.toString());
       res.status(200).json({
         success: true,
+        assessmentId: assessment._id.toString(),
         assessmentTitle: assessment.title,
         assessmentStatus: assessment.status,
         leaderboard

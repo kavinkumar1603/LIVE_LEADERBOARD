@@ -204,12 +204,30 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchQuestionDetails();
   }, [questionId]);
+
+  // Support direct Ctrl+V clipboard screenshot paste
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (data?.evaluation) return;
+      if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+        const file = e.clipboardData.files[0];
+        if (file.type.startsWith('image/')) {
+          setSelectedFile(file);
+          setPreviewUrl(URL.createObjectURL(file));
+          setErrorMsg(null);
+        }
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [data?.evaluation]);
 
   const fetchQuestionDetails = async () => {
     setLoading(true);
@@ -234,13 +252,42 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!data?.evaluation) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (data?.evaluation) return;
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        setSelectedFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
+        setErrorMsg(null);
+      } else {
+        setErrorMsg('Please drop an image file (PNG, JPG, WEBP).');
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
 
     if (!selectedFile && !data?.submission) {
-      setErrorMsg('Please select a screenshot image of your code output.');
+      setErrorMsg('Please select or paste a screenshot image of your code output.');
       return;
     }
 
@@ -248,7 +295,9 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
     try {
       const formData = new FormData();
       formData.append('questionId', questionId);
-      formData.append('assessmentId', assessmentId);
+      if (assessmentId && assessmentId !== 'assessment-active') {
+        formData.append('assessmentId', assessmentId);
+      }
       formData.append('codeSnippet', '');
       if (selectedFile) {
         formData.append('screenshot', selectedFile);
@@ -415,63 +464,101 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
 
                 {/* Space for Upload a Screenshot */}
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
-                    <UploadCloud className="w-4 h-4 text-violet-600" />
-                    {data?.evaluation ? 'Uploaded Screenshot' : 'Upload Screenshot'}
+                  <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <UploadCloud className="w-4 h-4 text-violet-600" />
+                      {data?.evaluation ? 'Uploaded Screenshot' : 'Upload Output Screenshot'}
+                    </span>
+                    {!data?.evaluation && (
+                      <span className="text-[11px] font-semibold text-slate-400">PNG, JPG, WEBP (Max 15MB)</span>
+                    )}
                   </h4>
 
+                  {/* Hidden File Input */}
+                  {!data?.evaluation && (
+                    <input
+                      id="screenshot-file-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  )}
+
                   {/* File Dropzone & Image Preview */}
-                  <label className={`block w-full ${data?.evaluation ? 'cursor-default' : 'cursor-pointer'}`}>
-                    <div className="border-2 border-dashed border-slate-300 hover:border-violet-500 rounded-3xl p-4 text-center bg-white transition-all shadow-sm">
-                      {!data?.evaluation && (
-                        <input
-                          type="file"
-                          accept="image/png, image/jpeg, image/jpg, image/webp"
-                          onChange={handleFileChange}
-                          className="hidden"
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed rounded-3xl p-4 text-center transition-all shadow-sm ${
+                      isDragging
+                        ? 'border-violet-600 bg-violet-50/70 ring-4 ring-violet-500/20'
+                        : 'border-slate-300 hover:border-violet-500 bg-white'
+                    }`}
+                  >
+                    {previewUrl ? (
+                      <div className="space-y-3 py-1">
+                        <img
+                          src={previewUrl}
+                          alt="Screenshot Preview"
+                          className="max-h-52 mx-auto rounded-2xl border border-slate-200 object-contain shadow-sm"
                         />
-                      )}
-                      {previewUrl ? (
-                        <div className="space-y-2 py-1">
-                          <img
-                            src={previewUrl}
-                            alt="Screenshot Preview"
-                            className="max-h-52 mx-auto rounded-2xl border border-slate-200 object-contain shadow-sm"
-                          />
-                          {!data?.evaluation && (
-                            <p className="text-xs text-violet-700 font-bold flex items-center justify-center gap-1 pt-1">
-                              <Sparkles className="w-3.5 h-3.5" /> Screenshot Selected
-                            </p>
-                          )}
-                        </div>
-                      ) : existingScreenshot ? (
-                        <div className="space-y-2 py-1">
-                          <img
-                            src={existingScreenshot}
-                            alt="Current Submission"
-                            className="max-h-52 mx-auto rounded-2xl border border-slate-200 object-contain shadow-sm bg-slate-900"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                          {!data?.evaluation && (
-                            <p className="text-xs text-slate-500 font-medium pt-1">
-                              Click to replace screenshot
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="py-8 flex flex-col items-center justify-center">
-                          <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center mb-2">
-                            <FileImage className="w-6 h-6" />
+                        {!data?.evaluation && (
+                          <div className="flex flex-col items-center gap-1.5 pt-1">
+                            <span className="text-xs text-violet-700 font-bold flex items-center justify-center gap-1">
+                              <Sparkles className="w-3.5 h-3.5" /> Ready: {selectedFile?.name} ({(selectedFile ? (selectedFile.size / (1024 * 1024)).toFixed(2) : 0)} MB)
+                            </span>
+                            <label
+                              htmlFor="screenshot-file-input"
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-800 cursor-pointer underline"
+                            >
+                              Choose a different picture
+                            </label>
                           </div>
-                          <p className="text-xs font-bold text-slate-800">
-                            Click to upload screenshot
-                          </p>
+                        )}
+                      </div>
+                    ) : existingScreenshot ? (
+                      <div className="space-y-3 py-1">
+                        <img
+                          src={existingScreenshot}
+                          alt="Current Submission"
+                          className="max-h-52 mx-auto rounded-2xl border border-slate-200 object-contain shadow-sm bg-slate-900"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                        {!data?.evaluation && (
+                          <div className="pt-2">
+                            <label
+                              htmlFor="screenshot-file-input"
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 cursor-pointer transition-colors"
+                            >
+                              <UploadCloud className="w-3.5 h-3.5" />
+                              Click to replace screenshot
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <label
+                        htmlFor="screenshot-file-input"
+                        className="py-7 flex flex-col items-center justify-center cursor-pointer group"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                          <FileImage className="w-6 h-6" />
                         </div>
-                      )}
-                    </div>
-                  </label>
+                        <p className="text-xs font-bold text-slate-800">
+                          Click to browse or drag & drop screenshot
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-1 font-medium">
+                          Or paste directly with <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-[10px] text-slate-700 font-bold">Ctrl+V</kbd>
+                        </p>
+                        <span className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm shadow-violet-600/20">
+                          <UploadCloud className="w-3.5 h-3.5" /> Browse Picture
+                        </span>
+                      </label>
+                    )}
+                  </div>
                 </div>
 
                 {/* Notifications */}
