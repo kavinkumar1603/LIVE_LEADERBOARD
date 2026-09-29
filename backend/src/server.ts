@@ -7,6 +7,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 import app from './app';
 import { connectDB } from './config/db';
 import { initSocket } from './config/socket';
+import './models';
 import { User } from './models/User';
 import { seedDatabase } from './seed';
 

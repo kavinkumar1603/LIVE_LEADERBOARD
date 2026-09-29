@@ -2,8 +2,12 @@ import mongoose from 'mongoose';
 import { Evaluation } from '../models/Evaluation';
 import { StudentAssignment } from '../models/StudentAssignment';
 import { Submission } from '../models/Submission';
+import { Question } from '../models/Question';
 import { User } from '../models/User';
 import { getIO } from '../config/socket';
+
+// Ensure Question model is registered for populate queries
+const _ensureQuestionModel = Question.modelName;
 
 export interface LeaderboardEntry {
   rank: number;
@@ -106,28 +110,104 @@ export class ScoreService {
    * Recalculate full leaderboard for an assessment with tie-breaker logic
    */
   static async getLeaderboard(assessmentId: string): Promise<LeaderboardEntry[]> {
-    // Find all enrolled Section C students in the system
+    // 1. Fetch all enrolled Section C students in the system
     const students = await User.find({ role: 'student' }).sort({ name: 1 });
+
+    // 2. Batch fetch assignments, submissions, and evaluations in 3 parallel queries
+    const [assignments, submissions, evaluations] = await Promise.all([
+      StudentAssignment.find({ assessmentId: new mongoose.Types.ObjectId(assessmentId) }).populate('questions.questionId'),
+      Submission.find({ assessmentId: new mongoose.Types.ObjectId(assessmentId) }),
+      Evaluation.find({ assessmentId: new mongoose.Types.ObjectId(assessmentId) })
+    ]);
+
+    // Map by studentId for O(1) in-memory lookups
+    const assignmentMap = new Map<string, any>();
+    assignments.forEach((a) => assignmentMap.set(a.studentId.toString(), a));
+
+    const submissionsMap = new Map<string, any[]>();
+    submissions.forEach((s) => {
+      const sId = s.studentId.toString();
+      if (!submissionsMap.has(sId)) submissionsMap.set(sId, []);
+      submissionsMap.get(sId)!.push(s);
+    });
+
+    const evaluationsMap = new Map<string, any[]>();
+    evaluations.forEach((e) => {
+      const sId = e.studentId.toString();
+      if (!evaluationsMap.has(sId)) evaluationsMap.set(sId, []);
+      evaluationsMap.get(sId)!.push(e);
+    });
 
     const leaderboardList: LeaderboardEntry[] = [];
 
     for (const student of students) {
-      const scoreData = await this.calculateStudentScore(assessmentId, student._id.toString());
+      const studentIdStr = student._id.toString();
+      const assignment = assignmentMap.get(studentIdStr);
+      const studentSubmissions = submissionsMap.get(studentIdStr) || [];
+      const studentEvaluations = evaluationsMap.get(studentIdStr) || [];
+
+      let totalMarks = 0;
+      let maxPossibleMarks = 0;
+      let lastEvalTime: Date | null = null;
+      let lastActivityTime: Date | null = null;
+
+      if (assignment && assignment.questions) {
+        assignment.questions.forEach((q: any) => {
+          if (q.questionId && typeof q.questionId.marks === 'number') {
+            maxPossibleMarks += q.questionId.marks;
+          }
+        });
+      }
+
+      studentEvaluations.forEach((ev: any) => {
+        totalMarks += ev.marksObtained;
+        if (!lastEvalTime || ev.evaluatedAt > lastEvalTime) {
+          lastEvalTime = ev.evaluatedAt;
+        }
+        if (!lastActivityTime || ev.evaluatedAt > lastActivityTime) {
+          lastActivityTime = ev.evaluatedAt;
+        }
+      });
+
+      studentSubmissions.forEach((sub: any) => {
+        if (!lastActivityTime || sub.submittedAt > lastActivityTime) {
+          lastActivityTime = sub.submittedAt;
+        }
+      });
+
+      // Count distinct questions solved/submitted
+      const solvedQuestionIds = new Set<string>();
+      studentSubmissions.forEach((s: any) => {
+        if (s.questionId) solvedQuestionIds.add(s.questionId.toString());
+      });
+      studentEvaluations.forEach((e: any) => {
+        if (e.questionId) solvedQuestionIds.add(e.questionId.toString());
+      });
+      if (assignment && assignment.questions) {
+        assignment.questions.forEach((q: any) => {
+          if (q.status === 'submitted' || q.status === 'evaluated') {
+            const qId = q.questionId?._id ? q.questionId._id.toString() : q.questionId?.toString();
+            if (qId) solvedQuestionIds.add(qId);
+          }
+        });
+      }
+      const completedCount = solvedQuestionIds.size;
+      const percentage = maxPossibleMarks > 0 ? Math.round((totalMarks / maxPossibleMarks) * 100 * 10) / 10 : 0;
 
       leaderboardList.push({
         rank: 0,
-        studentId: student._id.toString(),
+        studentId: studentIdStr,
         rollNumber: student.studentId || 'N/A',
         name: student.name,
         department: student.department || 'CSE',
         section: student.section || 'C',
-        totalMarks: scoreData.totalMarks,
-        maxPossibleMarks: scoreData.maxPossibleMarks || 60,
-        percentage: scoreData.percentage,
-        completedQuestions: scoreData.completedQuestions,
-        totalAssignedQuestions: scoreData.totalAssignedQuestions || 6,
-        lastEvaluationTime: scoreData.lastEvaluationTime,
-        lastActivityTime: scoreData.lastActivityTime
+        totalMarks,
+        maxPossibleMarks: maxPossibleMarks || 60,
+        percentage,
+        completedQuestions: completedCount,
+        totalAssignedQuestions: assignment?.questions.length || 6,
+        lastEvaluationTime: lastEvalTime,
+        lastActivityTime: lastActivityTime || lastEvalTime
       });
     }
 
@@ -135,6 +215,7 @@ export class ScoreService {
     // 1. Total Marks DESC
     // 2. Completed Questions DESC
     // 3. Last Activity Time ASC (earlier submission/evaluation is better)
+    // 4. Name ASC
     leaderboardList.sort((a, b) => {
       if (b.totalMarks !== a.totalMarks) {
         return b.totalMarks - a.totalMarks;
