@@ -106,17 +106,12 @@ export class ScoreService {
    * Recalculate full leaderboard for an assessment with tie-breaker logic
    */
   static async getLeaderboard(assessmentId: string): Promise<LeaderboardEntry[]> {
-    // Find all student assignments for this assessment
-    const assignments = await StudentAssignment.find({
-      assessmentId: new mongoose.Types.ObjectId(assessmentId)
-    }).populate('studentId', 'name studentId department section email');
+    // Find all enrolled Section C students in the system
+    const students = await User.find({ role: 'student' }).sort({ name: 1 });
 
     const leaderboardList: LeaderboardEntry[] = [];
 
-    for (const assign of assignments) {
-      const student = assign.studentId as any;
-      if (!student) continue;
-
+    for (const student of students) {
       const scoreData = await this.calculateStudentScore(assessmentId, student._id.toString());
 
       leaderboardList.push({
@@ -127,10 +122,10 @@ export class ScoreService {
         department: student.department || 'CSE',
         section: student.section || 'C',
         totalMarks: scoreData.totalMarks,
-        maxPossibleMarks: scoreData.maxPossibleMarks,
+        maxPossibleMarks: scoreData.maxPossibleMarks || 60,
         percentage: scoreData.percentage,
         completedQuestions: scoreData.completedQuestions,
-        totalAssignedQuestions: scoreData.totalAssignedQuestions,
+        totalAssignedQuestions: scoreData.totalAssignedQuestions || 6,
         lastEvaluationTime: scoreData.lastEvaluationTime,
         lastActivityTime: scoreData.lastActivityTime
       });

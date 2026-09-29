@@ -9,6 +9,7 @@ router.use(authenticate, requireRole('admin'));
 
 router.get('/dashboard-stats', AdminController.getDashboardStats);
 router.get('/students', AdminController.getStudents);
+router.get('/leaderboard', AdminController.getLeaderboard);
 
 // Question Management
 router.get('/questions', AdminController.getQuestions);

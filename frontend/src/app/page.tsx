@@ -183,6 +183,9 @@ function ArenaPageContent() {
   // Navigation handlers syncing state + router
   const navigateTab = (newTab: 'questions' | 'leaderboard' | 'submissions' | 'bank') => {
     setActiveTab(newTab);
+    if (newTab === 'leaderboard') {
+      fetchLeaderboard();
+    }
     if (typeof window !== 'undefined' && user) {
       localStorage.setItem(`live_tab_${user.role}`, newTab);
     }
@@ -239,7 +242,8 @@ function ArenaPageContent() {
 
   const fetchLeaderboard = async () => {
     try {
-      const res = await apiRequest('/student/leaderboard');
+      const endpoint = user?.role === 'admin' ? '/admin/leaderboard' : '/student/leaderboard';
+      const res = await apiRequest(endpoint);
       if (res.success && res.leaderboard) {
         setLeaderboard(res.leaderboard);
         if (res.assessmentTitle) {

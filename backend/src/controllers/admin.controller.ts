@@ -366,4 +366,28 @@ export class AdminController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
+  static async getLeaderboard(_req: AuthRequest, res: Response): Promise<void> {
+    try {
+      let assessment = await Assessment.findOne({ status: 'LIVE' });
+      if (!assessment) {
+        assessment = await Assessment.findOne().sort({ createdAt: -1 });
+      }
+
+      if (!assessment) {
+        res.status(200).json({ success: true, leaderboard: [] });
+        return;
+      }
+
+      const leaderboard = await ScoreService.getLeaderboard(assessment._id.toString());
+      res.status(200).json({
+        success: true,
+        assessmentTitle: assessment.title,
+        assessmentStatus: assessment.status,
+        leaderboard
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
