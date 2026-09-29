@@ -126,6 +126,13 @@ function ArenaPageContent() {
     }
   }, [user]);
 
+  // Re-fetch leaderboard on navigating to leaderboard tab
+  useEffect(() => {
+    if (activeTab === 'leaderboard') {
+      fetchLeaderboard();
+    }
+  }, [activeTab]);
+
   // Router & URL Tab Synchronization (Preserves exact page & modal on refresh!)
   useEffect(() => {
     if (!user) return;
@@ -599,6 +606,7 @@ function ArenaPageContent() {
               <LeaderboardTable
                 entries={leaderboard}
                 currentStudentId={user.id}
+                onRefresh={fetchLeaderboard}
               />
             )}
 
@@ -826,6 +834,7 @@ function ArenaPageContent() {
             <LeaderboardTable
               entries={leaderboard}
               isProjectorMode={false}
+              onRefresh={fetchLeaderboard}
             />
           )}
 

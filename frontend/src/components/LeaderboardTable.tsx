@@ -2,19 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { LeaderboardEntry } from '../types';
-import { Trophy, Search, Clock, Sparkles, Crown, Medal } from 'lucide-react';
+import { Trophy, Search, Clock, Sparkles, Crown, Medal, RefreshCw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
   currentStudentId?: string;
   isProjectorMode?: boolean;
+  onRefresh?: () => void;
 }
 
 export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
   entries,
   currentStudentId,
-  isProjectorMode = false
+  isProjectorMode = false,
+  onRefresh
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -101,15 +103,27 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
         </div>
 
         {!isProjectorMode && (
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search student by name..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
-            />
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all border border-slate-200 cursor-pointer shrink-0"
+                title="Refresh Standings"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-slate-600" />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+            )}
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search student by name..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+              />
+            </div>
           </div>
         )}
       </div>
