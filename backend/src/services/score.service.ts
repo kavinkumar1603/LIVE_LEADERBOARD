@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Evaluation } from '../models/Evaluation';
 import { StudentAssignment } from '../models/StudentAssignment';
+import { Submission } from '../models/Submission';
 import { User } from '../models/User';
 import { getIO } from '../config/socket';
 
@@ -17,6 +18,7 @@ export interface LeaderboardEntry {
   completedQuestions: number;
   totalAssignedQuestions: number;
   lastEvaluationTime: Date | null;
+  lastActivityTime?: Date | null;
 }
 
 export class ScoreService {
@@ -29,6 +31,11 @@ export class ScoreService {
       studentId: new mongoose.Types.ObjectId(studentId)
     }).populate('questions.questionId');
 
+    const submissions = await Submission.find({
+      assessmentId: new mongoose.Types.ObjectId(assessmentId),
+      studentId: new mongoose.Types.ObjectId(studentId)
+    });
+
     const evaluations = await Evaluation.find({
       assessmentId: new mongoose.Types.ObjectId(assessmentId),
       studentId: new mongoose.Types.ObjectId(studentId)
@@ -36,8 +43,8 @@ export class ScoreService {
 
     let totalMarks = 0;
     let maxPossibleMarks = 0;
-    let completedCount = 0;
     let lastEvalTime: Date | null = null;
+    let lastActivityTime: Date | null = null;
 
     if (assignment && assignment.questions) {
       assignment.questions.forEach((q: any) => {
@@ -49,21 +56,49 @@ export class ScoreService {
 
     evaluations.forEach((ev) => {
       totalMarks += ev.marksObtained;
-      completedCount++;
       if (!lastEvalTime || ev.evaluatedAt > lastEvalTime) {
         lastEvalTime = ev.evaluatedAt;
       }
+      if (!lastActivityTime || ev.evaluatedAt > lastActivityTime) {
+        lastActivityTime = ev.evaluatedAt;
+      }
     });
+
+    submissions.forEach((sub) => {
+      if (!lastActivityTime || sub.submittedAt > lastActivityTime) {
+        lastActivityTime = sub.submittedAt;
+      }
+    });
+
+    // Count distinct questions solved/submitted dynamically:
+    // A question is counted as solved as soon as it has a submission or is evaluated
+    const solvedQuestionIds = new Set<string>();
+    submissions.forEach((s) => {
+      if (s.questionId) solvedQuestionIds.add(s.questionId.toString());
+    });
+    evaluations.forEach((e) => {
+      if (e.questionId) solvedQuestionIds.add(e.questionId.toString());
+    });
+    if (assignment && assignment.questions) {
+      assignment.questions.forEach((q: any) => {
+        if (q.status === 'submitted' || q.status === 'evaluated') {
+          const qId = q.questionId?._id ? q.questionId._id.toString() : q.questionId?.toString();
+          if (qId) solvedQuestionIds.add(qId);
+        }
+      });
+    }
+    const completedCount = solvedQuestionIds.size;
 
     const percentage = maxPossibleMarks > 0 ? Math.round((totalMarks / maxPossibleMarks) * 100 * 10) / 10 : 0;
 
     return {
       totalMarks,
-      maxPossibleMarks: maxPossibleMarks || 50,
+      maxPossibleMarks: maxPossibleMarks || 60,
       percentage,
       completedQuestions: completedCount,
-      totalAssignedQuestions: assignment?.questions.length || 0,
-      lastEvaluationTime: lastEvalTime
+      totalAssignedQuestions: assignment?.questions.length || 6,
+      lastEvaluationTime: lastEvalTime,
+      lastActivityTime: lastActivityTime || lastEvalTime
     };
   }
 
@@ -96,14 +131,15 @@ export class ScoreService {
         percentage: scoreData.percentage,
         completedQuestions: scoreData.completedQuestions,
         totalAssignedQuestions: scoreData.totalAssignedQuestions,
-        lastEvaluationTime: scoreData.lastEvaluationTime
+        lastEvaluationTime: scoreData.lastEvaluationTime,
+        lastActivityTime: scoreData.lastActivityTime
       });
     }
 
     // Sort by:
     // 1. Total Marks DESC
     // 2. Completed Questions DESC
-    // 3. Last Evaluation Time ASC (earlier is better)
+    // 3. Last Activity Time ASC (earlier submission/evaluation is better)
     leaderboardList.sort((a, b) => {
       if (b.totalMarks !== a.totalMarks) {
         return b.totalMarks - a.totalMarks;
@@ -111,23 +147,28 @@ export class ScoreService {
       if (b.completedQuestions !== a.completedQuestions) {
         return b.completedQuestions - a.completedQuestions;
       }
-      if (a.lastEvaluationTime && b.lastEvaluationTime) {
-        return a.lastEvaluationTime.getTime() - b.lastEvaluationTime.getTime();
+      const aTime = a.lastActivityTime || a.lastEvaluationTime;
+      const bTime = b.lastActivityTime || b.lastEvaluationTime;
+      if (aTime && bTime) {
+        return aTime.getTime() - bTime.getTime();
       }
-      return 0;
+      if (aTime) return -1;
+      if (bTime) return 1;
+      return a.name.localeCompare(b.name);
     });
 
-    // Assign rank with standard competition ranking (only students with marks > 0 are ranked)
+    // Assign rank with standard competition ranking
+    // Any student who has submitted at least one question or received marks gets a competitive rank
     for (let i = 0; i < leaderboardList.length; i++) {
       const curr = leaderboardList[i];
-      if (curr.totalMarks <= 0) {
+      if (curr.totalMarks <= 0 && curr.completedQuestions <= 0) {
         curr.rank = 0;
         continue;
       }
       if (i > 0) {
         const prev = leaderboardList[i - 1];
         if (
-          prev.totalMarks > 0 &&
+          (prev.totalMarks > 0 || prev.completedQuestions > 0) &&
           curr.totalMarks === prev.totalMarks &&
           curr.completedQuestions === prev.completedQuestions
         ) {
@@ -152,30 +193,32 @@ export class ScoreService {
       const leaderboard = await this.getLeaderboard(assessmentId);
 
       // Broadcast updated leaderboard to assessment room
-      io.to(`assessment:${assessmentId}`).emit('leaderboard:update', {
+      const lbPayload = {
         assessmentId,
         leaderboard,
         updatedAt: new Date().toISOString()
-      });
+      };
+
+      io.to(`assessment:${assessmentId}`).emit('leaderboard:update', lbPayload);
 
       // Also broadcast directly to general listeners
-      io.emit('leaderboard:update', {
-        assessmentId,
-        leaderboard,
-        updatedAt: new Date().toISOString()
-      });
+      io.emit('leaderboard:update', lbPayload);
 
-      // If an individual student was updated, notify them privately
+      // If an individual student was updated, notify them privately & globally
       if (updatedStudentId) {
         const studentScore = await this.calculateStudentScore(assessmentId, updatedStudentId);
         const myRankEntry = leaderboard.find((l) => l.studentId === updatedStudentId);
 
-        io.to(`student:${updatedStudentId}`).emit('student:score_update', {
+        const scorePayload = {
           assessmentId,
+          studentId: updatedStudentId,
           ...studentScore,
           rank: myRankEntry ? myRankEntry.rank : null,
           updatedAt: new Date().toISOString()
-        });
+        };
+
+        io.to(`student:${updatedStudentId}`).emit('student:score_update', scorePayload);
+        io.emit('student:score_update', scorePayload);
       }
     } catch (err) {
       console.error('[ScoreService] Broadcast error:', err);

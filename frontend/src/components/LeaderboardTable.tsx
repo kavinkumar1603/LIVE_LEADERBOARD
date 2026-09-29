@@ -185,12 +185,12 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
                           <div
                             className="bg-gradient-to-r from-violet-600 to-indigo-500 h-full rounded-full transition-all duration-500"
                             style={{
-                              width: `${Math.min(100, (entry.completedQuestions / (entry.totalAssignedQuestions || 5)) * 100)}%`
+                              width: `${Math.min(100, (entry.completedQuestions / (entry.totalAssignedQuestions || 6)) * 100)}%`
                             }}
                           />
                         </div>
                         <span className="text-xs font-bold text-slate-700">
-                          {entry.completedQuestions}/{entry.totalAssignedQuestions || 5}
+                          {entry.completedQuestions}/{entry.totalAssignedQuestions || 6}
                         </span>
                       </div>
                     </td>

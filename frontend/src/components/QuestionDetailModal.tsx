@@ -261,8 +261,8 @@ export const QuestionDetailModal: React.FC<QuestionDetailModalProps> = ({
 
       if (res.success) {
         setSuccessMsg('Screenshot submitted successfully! Queued for faculty evaluation.');
+        onSubmitted();
         setTimeout(() => {
-          onSubmitted();
           onClose();
         }, 1300);
       } else {

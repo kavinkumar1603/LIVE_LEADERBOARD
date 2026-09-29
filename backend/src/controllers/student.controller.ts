@@ -142,11 +142,11 @@ export class StudentController {
           difficulty: q?.difficulty,
           marks: q?.marks,
           category: q?.category,
-          isSubmitted: !!sub,
-          isEvaluated: !!ev,
+          isSubmitted: !!sub || item.status === 'submitted' || item.status === 'evaluated',
+          isEvaluated: !!ev || item.status === 'evaluated',
           marksObtained: ev ? ev.marksObtained : null,
           feedback: ev ? ev.feedback : null,
-          submissionStatus: sub ? sub.status : 'NOT_SUBMITTED'
+          submissionStatus: sub ? sub.status : (item.status === 'submitted' ? 'SUBMITTED' : (item.status === 'evaluated' ? 'EVALUATED' : 'NOT_SUBMITTED'))
         };
       });
 
@@ -329,6 +329,11 @@ export class StudentController {
         }
       );
 
+      // Instantly broadcast live updates so leaderboard and student stats update dynamically
+      await ScoreService.broadcastUpdates(assessmentId, studentId.toString());
+
+      const updatedScore = await ScoreService.calculateStudentScore(assessmentId, studentId.toString());
+
       res.status(200).json({
         success: true,
         message: 'Screenshot submitted successfully for evaluation',
@@ -337,7 +342,8 @@ export class StudentController {
           screenshotUrl: submission.screenshotUrl,
           submittedAt: submission.submittedAt,
           status: submission.status
-        }
+        },
+        stats: updatedScore
       });
     } catch (error: any) {
       console.error('[StudentController.submitScreenshot] Error:', error);

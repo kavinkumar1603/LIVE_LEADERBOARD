@@ -67,17 +67,41 @@ function ArenaPageContent() {
   useEffect(() => {
     const socket = getSocket();
 
+    if (user?.role === 'student') {
+      socket.emit('join:student', user.id);
+    }
+
     const onLeaderboardUpdate = (data: { assessmentId: string; leaderboard: LeaderboardEntry[] }) => {
-      setLeaderboard(data.leaderboard);
+      if (data?.leaderboard) {
+        setLeaderboard(data.leaderboard);
+      }
       if (user?.role === 'admin') {
         fetchAdminDashboard();
+        fetchSubmissions();
       } else if (user?.role === 'student') {
         fetchStudentDashboard();
       }
     };
 
     const onScoreUpdate = (data: any) => {
-      fetchStudentDashboard();
+      if (user?.role === 'student') {
+        if (!data.studentId || data.studentId === user.id) {
+          setStudentStats((prev: any) =>
+            prev
+              ? {
+                  ...prev,
+                  totalMarks: data.totalMarks ?? prev.totalMarks,
+                  percentage: data.percentage ?? prev.percentage,
+                  completedQuestions: data.completedQuestions ?? prev.completedQuestions,
+                  totalQuestions: data.totalAssignedQuestions ?? prev.totalQuestions,
+                  currentRank: data.rank ?? prev.currentRank
+                }
+              : prev
+          );
+        }
+        fetchStudentDashboard();
+        fetchLeaderboard();
+      }
     };
 
     socket.on('leaderboard:update', onLeaderboardUpdate);
