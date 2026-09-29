@@ -746,7 +746,7 @@ function ArenaPageContent() {
                     return true;
                   })
                   .map((sub) => {
-                    const backendHost = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+                    const backendHost = process.env.SOCKET_URL || 'https://live-leaderboard-fnm0.onrender.com';
                     const imgUrl = sub.screenshotUrl.startsWith('http')
                       ? sub.screenshotUrl
                       : `${backendHost}${sub.screenshotUrl}`;
