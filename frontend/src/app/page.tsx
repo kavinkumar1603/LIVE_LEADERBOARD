@@ -29,7 +29,13 @@ import {
   Flame,
   AlertTriangle,
   Lock,
-  BookOpen
+  BookOpen,
+  Mail,
+  KeyRound,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  ShieldCheck
 } from 'lucide-react';
 
 function ArenaPageContent() {
@@ -60,8 +66,23 @@ function ArenaPageContent() {
   // Login Form State
   const [emailInput, setEmailInput] = useState('');
   const [passInput, setPassInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [activeLoginTab, setActiveLoginTab] = useState<'student' | 'faculty'>('student');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+
+  const fillCredentials = (type: 'student' | 'faculty') => {
+    if (type === 'student') {
+      setEmailInput('naveen.m2026cse@sece.ac.in');
+      setPassInput('naveen.m2026cse@sece.ac.in');
+      setActiveLoginTab('student');
+    } else {
+      setEmailInput('anandaraj.a@sece.ac.in');
+      setPassInput('anandaraj.a@sece.ac.in');
+      setActiveLoginTab('faculty');
+    }
+    setLoginError(null);
+  };
 
   // Socket.IO Real-time listeners
   useEffect(() => {
@@ -329,9 +350,9 @@ function ArenaPageContent() {
     e.preventDefault();
     setLoginError(null);
     setLoginLoading(true);
-    const res = await login(emailInput, passInput);
+    const res = await login(emailInput.trim(), passInput.trim());
     if (!res.success) {
-      setLoginError(res.message || 'Login failed');
+      setLoginError(res.message || 'Login failed. Please verify your email and password.');
     }
     setLoginLoading(false);
   };
@@ -342,110 +363,312 @@ function ArenaPageContent() {
   /* ------------------------------------------------------------- */
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-cyan-500 p-[1.5px] shadow-xl shadow-violet-500/20 animate-pulse mb-4">
-          <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
-            <Trophy className="w-7 h-7 text-violet-600" />
+      <main className="min-h-screen bg-[#0B0F19] flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-cyan-500 p-[1.5px] shadow-2xl shadow-violet-500/30 animate-pulse mb-5">
+          <div className="w-full h-full bg-[#0F172A] rounded-[14px] flex items-center justify-center">
+            <Trophy className="w-8 h-8 text-violet-400" />
           </div>
         </div>
-        <div className="flex items-center gap-2.5 text-sm font-bold text-slate-800">
-          <div className="w-2.5 h-2.5 rounded-full bg-violet-600 animate-ping" />
+        <div className="flex items-center gap-2.5 text-sm font-bold text-white">
+          <div className="w-2.5 h-2.5 rounded-full bg-violet-400 animate-ping" />
           <span>Resuming your contest session...</span>
         </div>
-        <p className="text-xs text-slate-400 mt-1.5 font-medium">COMPILER CLASH : Battle of Bug</p>
+        <p className="text-xs text-slate-500 mt-2 font-medium">COMPILER CLASH : Battle of Bug</p>
       </main>
     );
   }
 
   /* ------------------------------------------------------------- */
   /* UN-AUTHENTICATED: OFFICIAL SECE CONTEST SIGN IN               */
-  /* (Leaderboard is strictly hidden until logged in!)             */
+  /* REDESIGNED: Neat, Clean, and Ultra-Professional Split Screen  */
   /* ------------------------------------------------------------- */
   if (!user) {
     return (
-      <main className="min-h-screen flex flex-col justify-between p-4 sm:p-8 bg-[#f8fafc]">
-        <div className="max-w-4xl mx-auto w-full pt-8 pb-12">
+      <main className="min-h-screen w-full flex flex-col lg:flex-row bg-[#0B0F19] text-slate-100 selection:bg-violet-500 selection:text-white">
+        
+        {/* LEFT BRAND / SHOWCASE PANEL (Sleek dark obsidian with ambient glow) */}
+        <div className="relative w-full lg:w-[48%] xl:w-[46%] p-8 sm:p-12 lg:p-16 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-800/80 bg-gradient-to-br from-[#0B0F19] via-[#10172A] to-[#0B0F19]">
           
-          {/* Hero Header */}
-          <div className="text-center max-w-2xl mx-auto mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 text-xs font-bold mb-3 shadow-sm">
-              <Sparkles className="w-4 h-4 text-violet-600" />
-              Sri Eshwar College of Engineering • Dept. of CCE
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
-              COMPILER CLASH :{' '}
-              <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-                Battle of Bug
-              </span>
-            </h1>
-            <p className="text-slate-600 text-xs sm:text-sm mt-3 leading-relaxed">
-              Academic Year: 2026-2027 [ODD SEM] • Live Code Evaluation & Real-Time Leaderboard Platform
-            </p>
+          {/* Subtle Ambient background gradients & grid */}
+          <div className="absolute -top-32 -left-32 w-96 h-96 bg-violet-600/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 -right-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div 
+            className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)',
+              backgroundSize: '24px 24px'
+            }}
+          />
 
-            <div className="inline-flex items-center gap-2 mt-4 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs text-slate-600 font-semibold">
-              <Lock className="w-3.5 h-3.5 text-slate-500" />
-              Live Leaderboard is protected: Sign in to view rankings & submit solutions
+          {/* Top Brand Header */}
+          <div className="relative z-10 space-y-4">
+            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-800/70 border border-slate-700/60 backdrop-blur-md">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-semibold text-slate-300">
+                Sri Eshwar College of Engineering (Autonomous)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3.5 pt-1">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-cyan-500 p-[1.5px] shadow-lg shadow-violet-500/20">
+                <div className="w-full h-full bg-[#0F172A] rounded-[14px] flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-violet-400" />
+                </div>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-widest text-violet-400 font-bold">Department of CCE</p>
+                <h2 className="text-base font-bold text-white tracking-tight">Academic Year 2026-2027 [ODD SEM]</h2>
+              </div>
             </div>
           </div>
 
-          {/* Manual Login Form */}
-          <div className="max-w-md mx-auto bg-white rounded-[32px] p-6 sm:p-8 border border-slate-200 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-900 mb-1">Standard Sign In</h3>
-            <p className="text-xs text-slate-500 mb-6 font-medium">Enter registered student or faculty credentials</p>
+          {/* Middle Contest Hero & Value Cards */}
+          <div className="relative z-10 my-10 lg:my-0 space-y-6">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold">
+                <Sparkles className="w-3.5 h-3.5" />
+                Live Competitive Assessment Platform
+              </div>
+              <h1 className="text-3xl sm:text-4xl xl:text-5xl font-black text-white tracking-tight leading-[1.15]">
+                COMPILER CLASH <br />
+                <span className="bg-gradient-to-r from-violet-400 via-indigo-300 to-cyan-400 bg-clip-text text-transparent">
+                  Battle of Bug
+                </span>
+              </h1>
+              <p className="text-slate-400 text-sm max-w-md leading-relaxed">
+                Section C official competitive programming arena. Solve assigned challenges, upload code output screenshots, and witness live rank changes in real-time.
+              </p>
+            </div>
 
+            {/* Feature Highlights Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md">
+                <div className="w-8 h-8 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center mb-2.5">
+                  <Flame className="w-4 h-4" />
+                </div>
+                <h4 className="text-xs font-bold text-slate-200">Real-Time Leaderboard</h4>
+                <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                  Socket-driven live score calculation and dynamic rank reordering.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md">
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-2.5">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <h4 className="text-xs font-bold text-slate-200">Dual Faculty Evaluation</h4>
+                <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                  Direct screenshot verification and transparent score tracking.
+                </p>
+              </div>
+            </div>
+
+            {/* Active Candidates Count */}
+            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-800/40 border border-slate-800 backdrop-blur-sm">
+              <div className="flex -space-x-2 overflow-hidden">
+                <div className="inline-block h-7 w-7 rounded-full ring-2 ring-slate-900 bg-violet-600 text-[10px] font-bold text-white flex items-center justify-center">NM</div>
+                <div className="inline-block h-7 w-7 rounded-full ring-2 ring-slate-900 bg-indigo-600 text-[10px] font-bold text-white flex items-center justify-center">AK</div>
+                <div className="inline-block h-7 w-7 rounded-full ring-2 ring-slate-900 bg-cyan-600 text-[10px] font-bold text-white flex items-center justify-center">SR</div>
+              </div>
+              <div className="text-xs text-slate-300">
+                <span className="font-bold text-white">67 Section C Candidates</span> loaded from MongoDB Atlas
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Security Assurance */}
+          <div className="relative z-10 pt-4 flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-slate-400" />
+              256-bit SSL Protected Contest Session
+            </span>
+            <span>SECE • CCE Arena</span>
+          </div>
+        </div>
+
+        {/* RIGHT AUTHENTICATION PANEL (Clean, crisp, modern studio canvas) */}
+        <div className="w-full lg:w-[52%] xl:w-[54%] bg-[#f8fafc] text-slate-900 flex flex-col justify-between p-6 sm:p-12 lg:p-16">
+          <div className="max-w-md w-full mx-auto my-auto py-6">
+            
+            {/* Header */}
+            <div className="mb-8">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-100 text-violet-800 text-[11px] font-bold mb-3">
+                <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+                Contest Authentication Portal
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Sign in to your account
+              </h2>
+              <p className="text-slate-500 text-xs sm:text-sm mt-1">
+                Access your personalized question set, solve problems, and climb the leaderboard.
+              </p>
+            </div>
+
+            {/* Role Tab Selector (Student vs Faculty) */}
+            <div className="flex p-1 mb-6 rounded-2xl bg-slate-200/70 border border-slate-300/60 shadow-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveLoginTab('student');
+                  setLoginError(null);
+                }}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  activeLoginTab === 'student'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <GraduationCap className="w-4 h-4 text-violet-600" />
+                Student Login
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveLoginTab('faculty');
+                  setLoginError(null);
+                }}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  activeLoginTab === 'faculty'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                Faculty / Admin
+              </button>
+            </div>
+
+            {/* Form */}
             <form onSubmit={handleManualLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="e.g. anandaraj.a@sece.ac.in or naveen.m2026cse@sece.ac.in"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-600 focus:bg-white transition-all"
-                />
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  {activeLoginTab === 'student' ? 'Official College Email' : 'Faculty Administrator Email'}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder={
+                      activeLoginTab === 'student'
+                        ? 'e.g. naveen.m2026cse@sece.ac.in'
+                        : 'e.g. anandaraj.a@sece.ac.in'
+                    }
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-600 shadow-xs transition-all"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passInput}
-                  onChange={(e) => setPassInput(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-600 focus:bg-white transition-all"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700">Password</label>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {activeLoginTab === 'student' ? 'Default: same as college email' : 'Admin password'}
+                  </span>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <KeyRound className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={passInput}
+                    onChange={(e) => setPassInput(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full pl-10 pr-11 py-3 bg-white border border-slate-300 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-600 shadow-xs transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-violet-50/80 border border-violet-200/80 text-xs text-violet-800 flex items-start gap-2.5">
+              {/* Informational Hint Card */}
+              <div className="p-3.5 rounded-2xl bg-violet-50/70 border border-violet-200/80 text-xs text-violet-900 flex items-start gap-2.5">
                 <Sparkles className="w-4 h-4 text-violet-600 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  <span className="font-bold">SECE Contest Sign In:</span> Enter your official college email address as both username and password.
+                  {activeLoginTab === 'student' ? (
+                    <>
+                      <span className="font-bold">Student Notice:</span> Enter your official SECE college email address as both username and password to log in.
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-bold">Faculty Notice:</span> Sign in with your faculty administrator credentials to review submissions and manage live evaluations.
+                    </>
+                  )}
                 </p>
               </div>
 
               {loginError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium">
-                  {loginError}
+                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2 font-medium">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{loginError}</span>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full py-3 rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-sm font-bold text-white shadow-md shadow-violet-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 hover:from-violet-700 hover:to-indigo-700 text-sm font-bold text-white shadow-md shadow-violet-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer group"
               >
-                {loginLoading ? 'Signing in...' : 'Sign In & Enter Contest'}
+                {loginLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Signing in to Contest...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Enter Contest Arena</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </>
+                )}
               </button>
             </form>
+
+            {/* Quick Demo Credentials for Fast Testing */}
+            <div className="mt-8 pt-6 border-t border-slate-200">
+              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-3 text-center">
+                Quick Fill Credentials (One-Click)
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => fillCredentials('student')}
+                  className="px-3 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-violet-300 hover:bg-violet-50/50 text-[11px] font-semibold text-slate-700 text-center transition-all cursor-pointer shadow-xs"
+                >
+                  <span className="block text-violet-700 font-bold">Student Demo</span>
+                  <span className="text-[10px] text-slate-400 truncate block">Naveen M (26CSE001)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => fillCredentials('faculty')}
+                  className="px-3 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-[11px] font-semibold text-slate-700 text-center transition-all cursor-pointer shadow-xs"
+                >
+                  <span className="block text-indigo-700 font-bold">Faculty Demo</span>
+                  <span className="text-[10px] text-slate-400 truncate block">Anandaraj A (Admin)</span>
+                </button>
+              </div>
+            </div>
+
           </div>
 
+          {/* Footer */}
+          <footer className="text-center text-xs text-slate-400 py-3 font-medium">
+            COMPILER CLASH : Battle of Bug © 2026 • Sri Eshwar College of Engineering • Dept. of CSE
+          </footer>
         </div>
 
-        <footer className="text-center text-xs text-slate-400 py-4 border-t border-slate-200 font-medium">
-          COMPILER CLASH : Battle of Bug © 2026 • Sri Eshwar College of Engineering • Dept. of CCE
-        </footer>
       </main>
     );
   }
