@@ -145,7 +145,7 @@ function ArenaPageContent() {
     if (!user) return;
 
     const urlTab = searchParams ? (searchParams.get('tab') as any) : null;
-    const savedTab = typeof window !== 'undefined' ? localStorage.getItem(`live_tab_${user.role}`) : null;
+    const savedTab = typeof window !== 'undefined' ? sessionStorage.getItem(`live_tab_${user.role}`) : null;
 
     let targetTab: 'questions' | 'leaderboard' | 'submissions' | 'bank';
     if (user.role === 'admin') {
@@ -170,7 +170,7 @@ function ArenaPageContent() {
 
     setActiveTab(targetTab);
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`live_tab_${user.role}`, targetTab);
+      sessionStorage.setItem(`live_tab_${user.role}`, targetTab);
     }
 
     // Restore opened question modal if present in URL
@@ -201,7 +201,7 @@ function ArenaPageContent() {
       fetchLeaderboard();
     }
     if (typeof window !== 'undefined' && user) {
-      localStorage.setItem(`live_tab_${user.role}`, newTab);
+      sessionStorage.setItem(`live_tab_${user.role}`, newTab);
     }
     const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
     params.set('tab', newTab);
