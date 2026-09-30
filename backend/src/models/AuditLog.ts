@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IAuditLog extends Document {
   adminId: mongoose.Types.ObjectId;
-  action: 'MARK_AWARDED' | 'MARK_UPDATED' | 'ASSESSMENT_STATUS_CHANGED';
+  action: 'MARK_AWARDED' | 'MARK_UPDATED' | 'ASSESSMENT_STATUS_CHANGED' | 'MARK_DELETED';
   submissionId?: mongoose.Types.ObjectId;
   studentId?: mongoose.Types.ObjectId;
   questionId?: mongoose.Types.ObjectId;
@@ -17,7 +17,7 @@ const AuditLogSchema = new Schema<IAuditLog>(
     adminId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     action: {
       type: String,
-      enum: ['MARK_AWARDED', 'MARK_UPDATED', 'ASSESSMENT_STATUS_CHANGED'],
+      enum: ['MARK_AWARDED', 'MARK_UPDATED', 'ASSESSMENT_STATUS_CHANGED', 'MARK_DELETED'],
       required: true
     },
     submissionId: { type: Schema.Types.ObjectId, ref: 'Submission' },

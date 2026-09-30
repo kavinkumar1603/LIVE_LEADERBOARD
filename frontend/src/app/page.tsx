@@ -786,7 +786,7 @@ function ArenaPageContent() {
                   })
                   .map((sub) => {
                     const backendHost = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.SOCKET_URL || 'https://live-leaderboard-fnm0.onrender.com';
-                    const imgUrl = sub.screenshotUrl.startsWith('http')
+                    const imgUrl = sub.screenshotUrl.startsWith('http') || sub.screenshotUrl.startsWith('data:')
                       ? sub.screenshotUrl
                       : `${backendHost}${sub.screenshotUrl}`;
 

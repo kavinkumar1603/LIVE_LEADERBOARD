@@ -99,7 +99,7 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({
   };
 
   const backendHost = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.SOCKET_URL || 'https://live-leaderboard-fnm0.onrender.com';
-  const fullScreenshotUrl = submission.screenshotUrl.startsWith('http')
+  const fullScreenshotUrl = submission.screenshotUrl.startsWith('http') || submission.screenshotUrl.startsWith('data:')
     ? submission.screenshotUrl
     : `${backendHost}${submission.screenshotUrl}`;
 
