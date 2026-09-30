@@ -316,7 +316,8 @@ export class StudentController {
         return;
       }
 
-      const relativeScreenshotUrl = `/uploads/submissions/${req.file.filename}`;
+      const base64Image = req.file.buffer.toString('base64');
+      const relativeScreenshotUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
       // Check if already submitted
       let submission = await Submission.findOne({

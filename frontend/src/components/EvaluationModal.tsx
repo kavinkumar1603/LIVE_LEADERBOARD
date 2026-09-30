@@ -25,6 +25,7 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +70,35 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({
     }
   };
 
-  const backendHost = process.env.SOCKET_URL || 'https://live-leaderboard-fnm0.onrender.com';
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this screenshot? This will remove any awarded marks and reset the student\'s submission status.')) return;
+    
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setDeleting(true);
+
+    try {
+      const res = await apiRequest(`/admin/submissions/${submission.id}`, {
+        method: 'DELETE'
+      });
+
+      if (res.success) {
+        setSuccessMsg('Screenshot deleted! Marks reduced and student status updated.');
+        setTimeout(() => {
+          onEvaluated();
+          onClose();
+        }, 1200);
+      } else {
+        setErrorMsg(res.message || 'Failed to delete screenshot.');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Network error.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const backendHost = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.SOCKET_URL || 'https://live-leaderboard-fnm0.onrender.com';
   const fullScreenshotUrl = submission.screenshotUrl.startsWith('http')
     ? submission.screenshotUrl
     : `${backendHost}${submission.screenshotUrl}`;
@@ -114,14 +143,23 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({
                   <ExternalLink className="w-3.5 h-3.5 text-violet-600" />
                   Submitted Code Screenshot
                 </span>
-                <a
-                  href={fullScreenshotUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-violet-600 hover:underline font-semibold flex items-center gap-1"
-                >
-                  Open High-Res ↗
-                </a>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="text-xs text-rose-600 hover:underline font-semibold flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {deleting ? 'Deleting...' : 'Delete Screenshot'}
+                  </button>
+                  <a
+                    href={fullScreenshotUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-violet-600 hover:underline font-semibold flex items-center gap-1"
+                  >
+                    Open High-Res ↗
+                  </a>
+                </div>
               </div>
               <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-950 flex items-center justify-center p-2 min-h-[300px] max-h-[420px] shadow-inner">
                 <img

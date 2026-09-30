@@ -20,6 +20,7 @@ router.delete('/questions/:id', AdminController.deleteQuestion);
 // Submissions & Runtime Marking
 router.get('/submissions', AdminController.getSubmissions);
 router.post('/evaluate', AdminController.evaluateSubmission);
+router.delete('/submissions/:id', AdminController.deleteSubmission);
 
 // Audit & Controls
 router.get('/audit-logs', AdminController.getAuditLogs);

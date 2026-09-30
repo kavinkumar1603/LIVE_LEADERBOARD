@@ -313,6 +313,59 @@ export class AdminController {
     }
   }
 
+  static async deleteSubmission(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      const submission = await Submission.findById(id);
+      if (!submission) {
+        res.status(404).json({ success: false, message: 'Submission not found' });
+        return;
+      }
+
+      const evaluation = await Evaluation.findOne({ submissionId: id });
+      if (evaluation) {
+        await Evaluation.deleteOne({ _id: evaluation._id });
+        
+        await AuditLog.create({
+          adminId: req.user!._id,
+          action: 'MARK_DELETED' as any,
+          submissionId: id,
+          studentId: submission.studentId,
+          questionId: submission.questionId,
+          oldMarks: evaluation.marksObtained,
+          newMarks: 0,
+          details: 'Screenshot deleted by admin',
+          timestamp: new Date()
+        });
+      }
+
+      await StudentAssignment.updateOne(
+        {
+          assessmentId: submission.assessmentId,
+          studentId: submission.studentId,
+          'questions.questionId': submission.questionId
+        },
+        {
+          $set: { 'questions.$.status': 'pending' }
+        }
+      );
+
+      await Submission.deleteOne({ _id: id });
+
+      const assessmentIdStr = submission.assessmentId.toString();
+      const studentIdStr = submission.studentId.toString();
+      await ScoreService.broadcastUpdates(assessmentIdStr, studentIdStr);
+
+      const updatedScore = await ScoreService.calculateStudentScore(assessmentIdStr, studentIdStr);
+
+      res.status(200).json({ success: true, message: 'Screenshot deleted successfully', studentScore: updatedScore });
+    } catch (error: any) {
+      console.error('[AdminController.deleteSubmission] Error:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   static async getAuditLogs(_req: AuthRequest, res: Response): Promise<void> {
     try {
       const logs = await AuditLog.find()
